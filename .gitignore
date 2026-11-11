@@ -1,0 +1,11 @@
+# archivos temporales generados por iniciar_sirpro.bat
+_fin.txt
+_php_pid.txt
+_test_log.txt
+
+# sistema / editores
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
