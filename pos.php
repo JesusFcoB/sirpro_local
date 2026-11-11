@@ -1,10 +1,11 @@
 <?php
 require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/includes/imagenes.php';
 requerirLogin();
 
 $categorias = db()->query('SELECT id, nombre FROM categorias ORDER BY nombre')->fetchAll();
 $productos = db()->query(
-    'SELECT p.id, p.sku, p.nombre, p.tipo, p.categoria_id, p.precio, p.precio_oferta, p.stock
+    'SELECT p.id, p.sku, p.nombre, p.tipo, p.categoria_id, p.precio, p.precio_oferta, p.stock, p.imagen
      FROM productos p WHERE p.activo = 1 ORDER BY p.nombre'
 )->fetchAll();
 
@@ -36,6 +37,9 @@ render('Punto de venta', '');
                         data-tipo="<?= e($p['tipo']) ?>"
                         data-stock="<?= (int) $p['stock'] ?>"
                         <?= $agotado ? 'disabled' : '' ?>>
+                    <?php if (!empty($p['imagen'])): ?>
+                        <img src="<?= e(rutaImagen($p['imagen'])) ?>" alt="" class="tarjeta-img">
+                    <?php endif; ?>
                     <span class="sku"><?= e($p['sku']) ?></span>
                     <span class="nombre"><?= e($p['nombre']) ?></span>
                     <span class="precio">

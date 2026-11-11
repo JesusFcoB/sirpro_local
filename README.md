@@ -8,6 +8,7 @@ Sistema de punto de venta local para Sirpro. Incluye:
 - **Ventas**: historial por fecha con total del periodo y acceso al ticket.
 - **Ticket** imprimible.
 - **Inventario y precios** (solo admin): alta/edición de productos, ajuste de stock, precios de oferta y desactivación.
+- **Fotos de productos** con compresión automática: al subir una imagen se reduce a máximo 800 px y se convierte a WebP (puede pasar de 3 MB a ~50 KB sin perder calidad visible).
 - **Categorías** tomadas del documento de requerimientos: Laptops, Computadoras de Escritorio, Impresoras, Discos SSD, Periféricos, Memorias USB y Servicios (mantenimiento de impresoras, cambio de pantalla, instalación de Office, etc.).
 
 ## Requisitos
@@ -56,6 +57,13 @@ Si tu MySQL tiene usuario o contraseña distintos a `root` sin contraseña, edit
 
 - `assets/logo.svg` — logo vectorial incluido (se ve nítido en pantalla e impresión).
 - Si colocas el logo oficial como `assets/logo.png`, el sistema lo usa automáticamente en lugar del SVG.
+
+## Imágenes de productos
+
+- En **Productos** verás el campo "Imagen del producto". Acepta JPG, PNG, GIF o WebP.
+- La imagen se comprime automáticamente al subirla: se reduce a un máximo de 800 px de lado y se guarda en formato WebP dentro de `assets/productos/`.
+- Deja el campo vacío al editar para conservar la imagen actual. Al desactivar un producto, su imagen se elimina.
+- **Si ya tenías la base de datos creada antes de esta función**, ejecuta `database_imagenes.sql` en phpMyAdmin para agregar la columna de imagen. Las instalaciones nuevas no lo necesitan.
 
 ## Estructura
 

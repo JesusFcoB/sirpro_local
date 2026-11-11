@@ -28,6 +28,7 @@ CREATE TABLE productos (
     categoria_id INT NOT NULL,
     tipo ENUM('producto','servicio') NOT NULL DEFAULT 'producto',
     descripcion TEXT,
+    imagen VARCHAR(120) NULL,
     precio DECIMAL(10,2) NOT NULL DEFAULT 0,
     precio_oferta DECIMAL(10,2) NULL,
     stock INT NOT NULL DEFAULT 0,

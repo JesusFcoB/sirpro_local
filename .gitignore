@@ -3,6 +3,10 @@ _fin.txt
 _php_pid.txt
 _test_log.txt
 
+# imagenes subidas (no subir al repo)
+assets/productos/*
+!assets/productos/.htaccess
+
 # sistema / editores
 Thumbs.db
 desktop.ini
