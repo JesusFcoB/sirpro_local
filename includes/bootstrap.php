@@ -69,7 +69,9 @@ function render(string $titulo, string $contenido): void
 {
     $nombre = e($_SESSION['nombre'] ?? '');
     $rol = $_SESSION['rol'] ?? '';
-    $admin = $rol === 'admin' ? '<a href="productos.php">Productos</a><a href="ventas.php">Ventas</a>' : '<a href="ventas.php">Ventas</a>';
+    $admin = $rol === 'admin'
+        ? '<a href="pos.php">Punto de venta</a><a href="productos.php">Productos</a><a href="categorias.php">Categorías</a><a href="ventas.php">Ventas</a><a href="reportes.php">Reportes</a>'
+        : '<a href="pos.php">Punto de venta</a><a href="ventas.php">Ventas</a>';
     echo <<<HTML
 <!DOCTYPE html>
 <html lang="es">

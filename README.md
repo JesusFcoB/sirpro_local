@@ -8,6 +8,8 @@ Sistema de punto de venta local para Sirpro. Incluye:
 - **Ventas**: historial por fecha con total del periodo y acceso al ticket.
 - **Ticket** imprimible.
 - **Inventario y precios** (solo admin): alta/edición de productos, ajuste de stock, precios de oferta y desactivación.
+- **Categorías** (solo admin): CRUD completo para gestionar categorías.
+- **Reportes** (solo admin): exporta productos, categorías y ventas a Excel (CSV) o imprime en PDF.
 - **Fotos de productos** con compresión automática: al subir una imagen se reduce a máximo 800 px y se convierte a WebP (puede pasar de 3 MB a ~50 KB sin perder calidad visible).
 - **Categorías** tomadas del documento de requerimientos: Laptops, Computadoras de Escritorio, Impresoras, Discos SSD, Periféricos, Memorias USB y Servicios (mantenimiento de impresoras, cambio de pantalla, instalación de Office, etc.).
 
@@ -75,6 +77,9 @@ pos.php            Pantalla de punto de venta
 ticket.php         Ticket de venta imprimible
 ventas.php         Historial de ventas
 productos.php      Inventario y precios (admin)
+categorias.php     Gestión de categorías (admin)
+reportes.php       Menú de reportes (admin)
+reporte_*.php      Reportes de productos, categorías y ventas
 api/venta.php      Registro de venta (transaccional)
 includes/          Conexión, sesión y plantilla
 assets/            Estilos y logo
