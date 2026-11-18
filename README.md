@@ -34,7 +34,7 @@ Sistema de punto de venta local para Sirpro. Incluye:
    - Crea la base de datos `sirpro` automáticamente la primera vez.
    - Levanta el servidor web local en el puerto 8000.
    - Abre el navegador en el punto de venta.
-2. Cuando termines, **presiona una tecla en la ventana del script**. Este detiene el servidor web y MySQL, y se cierra. No cierres esa ventana con la X; si lo haces, los servicios seguirán encendidos.
+2. Cuando termines, **presiona una tecla en la ventana del script**. Se detiene el servidor web y, si el script inició MySQL, también se apaga. Si cierras la ventana con la X, un vigilante apaga el PHP de Sirpro de todos modos.
 
 Opciones del script:
 

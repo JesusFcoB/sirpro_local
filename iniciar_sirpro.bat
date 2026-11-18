@@ -82,13 +82,23 @@ call :puerto_ok %PUERTO%
 if "%PUERTO_OK%"=="1" set "PUERTO=8001"
 
 echo Iniciando servidor web local en el puerto %PUERTO%...
-start "Sirpro PHP" /min "%PHP%" -S 127.0.0.1:%PUERTO% -t "%BASE%"
-timeout /t 2 /nobreak >nul 2>nul
+start /b "" "%PHP%" -S 127.0.0.1:%PUERTO% -t "%BASE%" >nul 2>&1
 
-rem captura del PID del servidor web
+rem captura del PID y arranca el vigilante cuanto antes
 set "PHP_PID="
+set /a INTENTOS=0
+:esperar_php
 powershell -NoProfile -Command "(Get-NetTCPConnection -LocalPort %PUERTO% -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1).OwningProcess" > "%BASE%_php_pid.txt" 2>nul
 set /p PHP_PID=<"%BASE%_php_pid.txt"
+if not "%PHP_PID%"=="" goto php_listo
+set /a INTENTOS+=1
+if %INTENTOS% gtr 20 goto php_listo
+timeout /t 1 /nobreak >nul 2>nul
+goto esperar_php
+
+:php_listo
+rem vigilante: apaga el PHP si el lanzador se cierra con la X
+if not "%PHP_PID%"=="" start "Vigilante Sirpro" /min powershell -NoProfile -ExecutionPolicy Bypass -File "%BASE%sirpro_servicios.ps1" -Php %PHP_PID% -Puerto %PUERTO% -MysqlAdmin "%MYSQLBIN%\mysqladmin.exe" -MysqlIniciado %MYSQL_INICIADO%
 
 if /i "%~1"=="/nobrowser" goto sin_navegador
 if /i "%~2"=="/nobrowser" goto sin_navegador
@@ -102,7 +112,7 @@ echo      http://127.0.0.1:%PUERTO%
 echo  Usuario: admin     Contrase¤a: admin123
 echo ------------------------------------------
 echo.
-echo  NO cierres esta ventana con la X.
+echo  Si cierras esta ventana con la X, el PHP se detiene solo.
 echo  Presiona una tecla para detener los servicios y cerrar.
 echo.
 
@@ -120,18 +130,16 @@ echo.
 echo Deteniendo servicios...
 if not "%PHP_PID%"=="" taskkill /pid %PHP_PID% /f >nul 2>&1
 
-rem red de seguridad: solo el servidor PHP de Sirpro (por linea de comandos)
-powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='php.exe'\" | Where-Object { $_.CommandLine -like '*-S 127.0.0.1:*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" >nul 2>&1
+rem red de seguridad: apaga solo el PHP de Sirpro en este puerto
+powershell -NoProfile -ExecutionPolicy Bypass -File "%BASE%sirpro_servicios.ps1" -Puerto %PUERTO% >nul 2>&1
 
 if "%MYSQL_INICIADO%"=="1" (
     echo Deteniendo MySQL...
     "%MYSQLBIN%\mysqladmin.exe" -u root shutdown >nul 2>&1
     timeout /t 2 /nobreak >nul 2>nul
-    taskkill /im mysqld.exe /f >nul 2>&1
-)
+    )
 echo Listo. Ya puedes cerrar esta ventana.
 
-type nul > "%BASE%_fin.txt"
 endlocal
 exit /b 0
 
