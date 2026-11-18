@@ -13,11 +13,14 @@ return [
     // API key de Google AI Studio (https://aistudio.google.com/apikey)
     'clave' => 'TU_API_KEY_AQUI',
 
-    // Modelo a usar. Podés cambiarlo por otro modelo Gemini disponible en tu cuenta.
-    'modelo' => 'gemini-2.5-flash',
+    // Modelo principal. 3.5 Flash-Lite es más ligero y estable que 3.8 Flash.
+    'modelo' => 'gemini-3.5-flash-lite',
 
-    // Segundos de espera máxima por respuesta.
-    'timeout' => 45,
+    // Si el principal está saturado o falla, se prueba con estos modelos en orden.
+    'modelos_alternativos' => ['gemini-3.8-flash'],
+
+    // Segundos de espera máxima por respuesta, por modelo.
+    'timeout' => 35,
 
     // Si es false, el modo "Analizar negocio" no envía cifras de ventas/inventario.
     'incluir_datos' => true,

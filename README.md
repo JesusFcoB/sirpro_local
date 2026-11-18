@@ -67,8 +67,9 @@ Si tu MySQL tiene usuario o contraseña distintos a `root` sin contraseña, edit
 3. Ingresá a Sirpro y abrí **Asistente IA** en el menú. El indicador debe decir **IA lista**.
 4. Opciones de `includes/config_ia.php`:
    - `clave`: tu API key de Google AI Studio.
-   - `modelo`: modelo Gemini a usar (por defecto `gemini-2.5-flash`).
-   - `timeout`: segundos máximos de espera por respuesta.
+   - `modelo`: modelo Gemini principal (por defecto `gemini-3.5-flash-lite`, más ligero y estable).
+   - `modelos_alternativos`: si el principal está saturado o da timeout, se prueba automáticamente con estos modelos (por defecto `gemini-3.8-flash`).
+   - `timeout`: segundos máximos de espera por respuesta y por modelo.
    - `incluir_datos`: si es `false`, el modo **Analizar negocio** no envía cifras de ventas ni inventario a internet.
 
 La clave queda en el servidor y nunca se envía al navegador. `includes/config_ia.php` está en `.gitignore` para que no se suba al repositorio. Si no hay clave o no hay internet, el resto de Sirpro sigue funcionando y el asistente muestra un aviso.

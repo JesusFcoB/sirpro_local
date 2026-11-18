@@ -164,7 +164,9 @@ render('Asistente IA', '');
         estadoEl.className = 'ia-estado ' + (ok ? 'ok' : 'error');
         estadoEl.innerHTML = '<span class="punto"></span> ' + escapar(ok ? 'IA lista' : 'IA sin configurar');
         if (datos && datos.proveedor && datos.modelo) {
-            modeloEl.textContent = datos.proveedor + ' · ' + datos.modelo;
+            modeloEl.textContent = datos.proveedor + ' · ' + (datos.modelos && datos.modelos.length > 1
+                ? datos.modelos.join(' → ')
+                : datos.modelo);
         }
         if (ok) {
             avisoEl.hidden = true;

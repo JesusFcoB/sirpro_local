@@ -12,11 +12,12 @@ function iaConfig(): array
     static $config = null;
     if ($config === null) {
         $porDefecto = [
-            'proveedor'     => 'gemini',
-            'clave'         => 'TU_API_KEY_AQUI',
-            'modelo'        => 'gemini-2.5-flash',
-            'timeout'       => 45,
-            'incluir_datos' => true,
+            'proveedor'           => 'gemini',
+            'clave'               => 'TU_API_KEY_AQUI',
+            'modelo'              => 'gemini-3.5-flash-lite',
+            'modelos_alternativos'=> ['gemini-3.8-flash'],
+            'timeout'             => 35,
+            'incluir_datos'       => true,
         ];
 
         $archivo = __DIR__ . '/config_ia.php';
@@ -38,13 +39,27 @@ function iaProveedor(): string
 function iaModelo(): string
 {
     $modelo = trim((string) (iaConfig()['modelo'] ?? ''));
-    return $modelo !== '' ? $modelo : 'gemini-2.5-flash';
+    return $modelo !== '' ? $modelo : 'gemini-3.5-flash-lite';
+}
+
+/** Modelo principal y respaldos, sin repetidos. */
+function iaModelos(): array
+{
+    $lista = [iaModelo()];
+    $alternativos = iaConfig()['modelos_alternativos'] ?? [];
+    foreach ((is_array($alternativos) ? $alternativos : []) as $modelo) {
+        $modelo = trim((string) $modelo);
+        if ($modelo !== '' && !in_array($modelo, $lista, true)) {
+            $lista[] = $modelo;
+        }
+    }
+    return $lista;
 }
 
 function iaTimeout(): int
 {
-    $timeout = (int) (iaConfig()['timeout'] ?? 45);
-    return $timeout > 0 ? $timeout : 45;
+    $timeout = (int) (iaConfig()['timeout'] ?? 35);
+    return $timeout > 0 ? $timeout : 35;
 }
 
 function iaIncluirDatos(): bool
@@ -61,6 +76,11 @@ function iaConfigurada(): bool
 {
     $clave = iaClave();
     return $clave !== '' && $clave !== 'TU_API_KEY_AQUI' && !str_starts_with($clave, 'TU_API');
+}
+
+/** Error temporal (capacidad, timeout): permite probar el siguiente modelo. */
+if (!class_exists('IaErrorTransitorio')) {
+    class IaErrorTransitorio extends RuntimeException {}
 }
 
 /** Modos disponibles en la interfaz. */
@@ -260,7 +280,73 @@ function iaSystemPrompt(string $modo): string
         . $extra . "\n\nCONTEXTO:\n" . iaContexto($modo);
 }
 
-/** Llama a Gemini y devuelve el texto de la respuesta. */
+/** Llamada simple a un modelo de Gemini. Puede lanzar IaErrorTransitorio. */
+function iaLlamarGemini(string $modelo, string $payload): string
+{
+    $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
+        . rawurlencode($modelo)
+        . ':generateContent?key=' . rawurlencode(iaClave());
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 8,
+        CURLOPT_TIMEOUT        => iaTimeout(),
+    ]);
+
+    $respuesta = curl_exec($ch);
+    $errno = (int) curl_errno($ch);
+    $error = (string) curl_error($ch);
+    $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($respuesta === false || $http === 0) {
+        if ($errno === 28) { // CURLE_OPERATION_TIMEDOUT
+            throw new IaErrorTransitorio('Gemini tardó demasiado en responder con ' . $modelo . '.');
+        }
+        throw new IaErrorTransitorio('No se pudo conectar con Gemini (' . $modelo . '). ' . $error);
+    }
+
+    $datos = json_decode((string) $respuesta, true);
+    if (!is_array($datos)) {
+        throw new IaErrorTransitorio('Gemini devolvió una respuesta que no pude leer.');
+    }
+
+    $detalle = is_string($datos['error']['message'] ?? null) ? $datos['error']['message'] : '';
+    $textoDetalle = mb_strtolower($detalle);
+    $esCapacidad = in_array($http, [408, 429, 500, 502, 503, 504], true)
+        || str_contains($textoDetalle, 'high demand')
+        || str_contains($textoDetalle, 'overloaded')
+        || str_contains($textoDetalle, 'try again later')
+        || str_contains($textoDetalle, 'rate limit');
+
+    if ($esCapacidad) {
+        throw new IaErrorTransitorio('Gemini está muy solicitado con ' . $modelo . '. ' . $detalle);
+    }
+    if ($http >= 400 || isset($datos['error'])) {
+        throw new RuntimeException('Gemini: ' . ($detalle !== '' ? $detalle : 'Revisá la clave y el modelo configurados.'));
+    }
+
+    $texto = '';
+    foreach (($datos['candidates'][0]['content']['parts'] ?? []) as $part) {
+        $texto .= (string) ($part['text'] ?? '');
+    }
+    $texto = trim($texto);
+    if ($texto === '') {
+        $bloqueo = $datos['promptFeedback']['blockReason'] ?? '';
+        throw new RuntimeException(
+            $bloqueo !== '' ? 'Gemini bloqueó la pregunta (' . $bloqueo . '). Probá con otras palabras.'
+                            : 'El modelo ' . $modelo . ' no devolvió texto. Probá con otra pregunta.'
+        );
+    }
+
+    return $texto;
+}
+
+/** Llama a Gemini probando el modelo principal y luego los alternativos. */
 function iaLlamarIA(string $mensaje, string $modo, array $historial = []): string
 {
     if (!iaModoValido($modo)) {
@@ -300,54 +386,23 @@ function iaLlamarIA(string $mensaje, string $modo, array $historial = []): strin
         throw new RuntimeException('No se pudo preparar la pregunta.');
     }
 
-    $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
-        . rawurlencode(iaModelo())
-        . ':generateContent?key=' . rawurlencode(iaClave());
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => $payload,
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CONNECTTIMEOUT => 8,
-        CURLOPT_TIMEOUT        => iaTimeout(),
-    ]);
-
-    $respuesta = curl_exec($ch);
-    $error = curl_error($ch);
-    $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($respuesta === false || $http === 0) {
-        throw new RuntimeException('No se pudo conectar con Gemini. Revisá la conexión a internet. Detalle: ' . $error);
+    $modelos = iaModelos();
+    $ultimoError = null;
+    foreach ($modelos as $indice => $modelo) {
+        try {
+            return iaLlamarGemini($modelo, $payload);
+        } catch (IaErrorTransitorio $e) {
+            $ultimoError = $e;
+            if ($indice < count($modelos) - 1) {
+                usleep(400000); // media pausa antes del modelo de respaldo
+            }
+        }
     }
 
-    $datos = json_decode((string) $respuesta, true);
-    if (!is_array($datos)) {
-        throw new RuntimeException('Gemini devolvió una respuesta que no pude leer.');
-    }
-    if ($http >= 400 || isset($datos['error'])) {
-        $detalle = is_string($datos['error']['message'] ?? null)
-            ? $datos['error']['message']
-            : 'Revisá la clave y el modelo configurados.';
-        throw new RuntimeException('Gemini: ' . $detalle);
-    }
-
-    $texto = '';
-    foreach (($datos['candidates'][0]['content']['parts'] ?? []) as $part) {
-        $texto .= (string) ($part['text'] ?? '');
-    }
-    $texto = trim($texto);
-    if ($texto === '') {
-        $bloqueo = $datos['promptFeedback']['blockReason'] ?? '';
-        throw new RuntimeException(
-            $bloqueo !== '' ? 'Gemini bloqueó la pregunta (' . $bloqueo . '). Probá con otras palabras.'
-                            : 'El modelo no devolvió texto. Probá con otra pregunta.'
-        );
-    }
-
-    return $texto;
+    throw new RuntimeException(
+        'Gemini está saturado o respondiendo muy lento en este momento. Se probó con: '
+        . implode(', ', $modelos) . '. Probá de nuevo en unos minutos. ' . ($ultimoError ? $ultimoError->getMessage() : '')
+    );
 }
 
 /** Estado que muestra la interfaz (nunca incluye la clave). */
@@ -358,9 +413,10 @@ function iaEstado(): array
         'configurada'   => $configurada,
         'proveedor'     => iaProveedor(),
         'modelo'        => iaModelo(),
+        'modelos'       => iaModelos(),
         'incluir_datos' => iaIncluirDatos(),
         'mensaje'       => $configurada
-            ? 'Asistente IA listo con ' . iaProveedor() . ' · ' . iaModelo() . '.'
+            ? 'Asistente IA listo con ' . iaProveedor() . ' · ' . iaModelo() . ' (respaldo: ' . implode(', ', array_slice(iaModelos(), 1)) . ').'
             : 'Falta configurar la clave. Pedile al administrador que rellene includes/config_ia.php con su clave de Google AI Studio.',
     ];
 }
