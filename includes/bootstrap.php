@@ -184,8 +184,8 @@ function render(string $titulo, string $contenido): void
     $nombre = e($_SESSION['nombre'] ?? '');
     $rol = $_SESSION['rol'] ?? '';
     $links = $rol === 'admin'
-        ? '<a href="dashboard.php">Tablero</a><a href="pos.php">Punto de venta</a><a href="productos.php">Productos</a><a href="categorias.php">Categorías</a><a href="ventas.php">Ventas</a><a href="reportes.php">Reportes</a>'
-        : '<a href="dashboard.php">Tablero</a><a href="pos.php">Punto de venta</a><a href="ventas.php">Ventas</a>';
+        ? '<a href="dashboard.php">Tablero</a><a href="pos.php">Punto de venta</a><a href="productos.php">Productos</a><a href="categorias.php">Categorías</a><a href="ventas.php">Ventas</a><a href="reportes.php">Reportes</a><a href="ia.php">Asistente IA</a>'
+        : '<a href="dashboard.php">Tablero</a><a href="pos.php">Punto de venta</a><a href="ventas.php">Ventas</a><a href="ia.php">Asistente IA</a>';
     echo <<<HTML
 <!DOCTYPE html>
 <html lang="es">

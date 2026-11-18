@@ -7,6 +7,9 @@ _test_log.txt
 assets/productos/*
 !assets/productos/.htaccess
 
+# clave del asistente IA (nunca subirla)
+includes/config_ia.php
+
 # sistema / editores
 Thumbs.db
 desktop.ini

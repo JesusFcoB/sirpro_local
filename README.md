@@ -16,6 +16,7 @@ Sistema de punto de venta local para Sirpro. Incluye:
 - **Operaciones más seguras**: token CSRF en todos los formularios, validación estricta de ids/fechas/montos, comprobación de categorías, límites de subida de imágenes, confirmación antes de cobrar y redirección después de guardar para evitar duplicar acciones con F5.
 - **Fotos de productos** con compresión automática: al subir una imagen se reduce a máximo 800 px y se convierte a WebP (puede pasar de 3 MB a ~50 KB sin perder calidad visible).
 - **Categorías** tomadas del documento de requerimientos: Laptops, Computadoras de Escritorio, Impresoras, Discos SSD, Periféricos, Memorias USB y Servicios (mantenimiento de impresoras, cambio de pantalla, instalación de Office, etc.).
+- **Asistente IA** con Gemini: chat disponible para todos los usuarios con tres modos (analizar negocio, ayuda del sistema y redactar textos). Se configura una sola vez en el servidor; no requiere instalar nada en las PC.
 
 ## Requisitos
 
@@ -59,6 +60,21 @@ Cambia la contraseña en cuanto entres (se puede hacer desde la base de datos co
 
 Si tu MySQL tiene usuario o contraseña distintos a `root` sin contraseña, edita las constantes `DB_*` en `includes/bootstrap.php`.
 
+## Asistente IA (Gemini)
+
+1. Obtené una clave de Google AI Studio: https://aistudio.google.com/apikey (plan gratuito).
+2. Copiá `includes/config_ia.example.php` a `includes/config_ia.php` y rellená el campo `clave`.
+3. Ingresá a Sirpro y abrí **Asistente IA** en el menú. El indicador debe decir **IA lista**.
+4. Opciones de `includes/config_ia.php`:
+   - `clave`: tu API key de Google AI Studio.
+   - `modelo`: modelo Gemini a usar (por defecto `gemini-2.5-flash`).
+   - `timeout`: segundos máximos de espera por respuesta.
+   - `incluir_datos`: si es `false`, el modo **Analizar negocio** no envía cifras de ventas ni inventario a internet.
+
+La clave queda en el servidor y nunca se envía al navegador. `includes/config_ia.php` está en `.gitignore` para que no se suba al repositorio. Si no hay clave o no hay internet, el resto de Sirpro sigue funcionando y el asistente muestra un aviso.
+
+El modo **Analizar negocio** es solo para administradores. **Ayuda del sistema** y **Redactar textos** están disponibles para todos los usuarios.
+
 ## Logo
 
 - `assets/logo.svg` — logo vectorial incluido (se ve nítido en pantalla e impresión).
@@ -92,10 +108,13 @@ categorias.php     Gestión de categorías (admin)
 reportes.php       Menú de reportes (admin)
 reporte_*.php      Reportes de productos, categorías y ventas
 api/venta.php      Registro de venta (transaccional)
-includes/          Conexión, sesión, plantilla y exportador de Excel
+ia.php             Asistente IA (chat)
+api/ia.php         Endpoint del asistente IA
+includes/          Conexión, sesión, plantilla, exportador de Excel y configuración de IA
 assets/            Estilos y logo
 database.sql       Esquema y datos de ejemplo
 database_stock.sql Migración de stock mínimo (instalaciones existentes)
+includes/config_ia.example.php  Ejemplo de configuración del asistente IA
 ```
 
 ## Próximos pasos sugeridos
