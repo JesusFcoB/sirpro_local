@@ -201,9 +201,34 @@ function render(string $titulo, string $contenido): void
 {
     $nombre = e($_SESSION['nombre'] ?? '');
     $rol = $_SESSION['rol'] ?? '';
-    $links = $rol === 'admin'
-        ? '<a href="dashboard.php">Tablero</a><a href="pos.php">Punto de venta</a><a href="productos.php">Productos</a><a href="categorias.php">Categorías</a><a href="ventas.php">Ventas</a><a href="reportes.php">Reportes</a><a href="ia.php">Asistente IA</a>'
-        : '<a href="dashboard.php">Tablero</a><a href="pos.php">Punto de venta</a><a href="ventas.php">Ventas</a><a href="ia.php">Asistente IA</a>';
+    $pagina = basename($_SERVER['PHP_SELF'] ?? '');
+    $opciones = [
+        ['dashboard.php', '▦', 'Tablero', 'Tablero'],
+        ['pos.php', '🛒', 'Punto de venta', 'Venta'],
+        ['productos.php', '📦', 'Productos', 'Productos'],
+        ['categorias.php', '🏷️', 'Categorías', 'Categorías'],
+        ['ventas.php', '💰', 'Ventas', 'Ventas'],
+        ['reportes.php', '📊', 'Reportes', 'Reportes'],
+        ['ia.php', '✨', 'Asistente IA', 'IA'],
+    ];
+    if ($rol !== 'admin') {
+        $ocultas = ['productos.php', 'categorias.php', 'reportes.php'];
+        $opciones = array_values(array_filter(
+            $opciones,
+            static fn (array $op): bool => !in_array($op[0], $ocultas, true)
+        ));
+    }
+    $links = '';
+    foreach ($opciones as [$archivo, $icono, $etiqueta, $corto]) {
+        $activo = $pagina === $archivo
+            || ($archivo === 'reportes.php' && str_starts_with($pagina, 'reporte_'))
+            || ($archivo === 'ventas.php' && $pagina === 'ticket.php');
+        $links .= '<a href="' . $archivo . '" class="nav-item' . ($activo ? ' activo' : '') . '"'
+            . ($activo ? ' aria-current="page"' : '') . '>'
+            . '<span class="nav-icono" aria-hidden="true">' . $icono . '</span>'
+            . '<span class="nav-texto">' . $etiqueta . '</span>'
+            . '<span class="nav-corto">' . $corto . '</span></a>';
+    }
     echo <<<HTML
 <!DOCTYPE html>
 <html lang="es">
@@ -244,25 +269,27 @@ document.addEventListener('DOMContentLoaded', function(){
   setInterval(actualizarReloj, 1000);
 });
 </script>
-<header class="topbar">
-    <div class="brand"><img src="assets/logo.png" alt="Sirpro" onerror="this.onerror=function(){this.style.display='none'};this.src='assets/logo.svg'"><span>Sirpro</span></div>
-    <div class="user">
-        <div class="reloj" id="reloj" aria-label="Fecha y hora actual">
-            <span class="reloj-fecha">—</span>
-            <span class="reloj-hora">--:--:--</span>
-        </div>
-        <button class="btn ghost mini" id="dark-btn" type="button" onclick="toggleDark()" title="Cambiar modo oscuro">🌙</button> <span class="usuario-nombre">{$nombre}</span> <a class="btn ghost mini" href="logout.php">Salir</a>
-    </div>
-</header>
-<div class="opciones-bar">
-    <span class="opciones-titulo">Opciones</span>
-    {$links}
-</div>
-<main>
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="sidebar-titulo">Opciones</div>
+        <nav class="sidebar-nav" aria-label="Opciones del sistema">{$links}</nav>
+    </aside>
+    <div class="app-contenido">
+        <header class="topbar">
+            <div class="brand"><img src="assets/logo.png" alt="Sirpro" onerror="this.onerror=function(){this.style.display='none'};this.src='assets/logo.svg'"><span>Sirpro</span></div>
+            <div class="user">
+                <div class="reloj" id="reloj" aria-label="Fecha y hora actual">
+                    <span class="reloj-fecha">—</span>
+                    <span class="reloj-hora">--:--:--</span>
+                </div>
+                <button class="btn ghost mini" id="dark-btn" type="button" onclick="toggleDark()" title="Cambiar modo oscuro">🌙</button> <span class="usuario-nombre">{$nombre}</span> <a class="btn ghost mini" href="logout.php">Salir</a>
+            </div>
+        </header>
+        <main>
 HTML;
 }
 
 function renderFin(): void
 {
-    echo "</main>\n</body>\n</html>\n";
+    echo "</main>\n</div>\n</div>\n</body>\n</html>\n";
 }
