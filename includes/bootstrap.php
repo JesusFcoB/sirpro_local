@@ -69,7 +69,7 @@ function render(string $titulo, string $contenido): void
 {
     $nombre = e($_SESSION['nombre'] ?? '');
     $rol = $_SESSION['rol'] ?? '';
-    $admin = $rol === 'admin'
+    $links = $rol === 'admin'
         ? '<a href="pos.php">Punto de venta</a><a href="productos.php">Productos</a><a href="categorias.php">Categorías</a><a href="ventas.php">Ventas</a><a href="reportes.php">Reportes</a>'
         : '<a href="pos.php">Punto de venta</a><a href="ventas.php">Ventas</a>';
     echo <<<HTML
@@ -85,8 +85,7 @@ function render(string $titulo, string $contenido): void
 <header class="topbar">
     <div class="brand"><img src="assets/logo.png" alt="Sirpro" onerror="this.onerror=function(){this.style.display='none'};this.src='assets/logo.svg'"><span>Sirpro</span></div>
     <nav>
-        <a href="pos.php">Punto de venta</a>
-        {$admin}
+        {$links}
     </nav>
     <div class="user">{$nombre} <a href="logout.php">Salir</a></div>
 </header>
