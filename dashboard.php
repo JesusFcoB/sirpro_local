@@ -141,7 +141,7 @@ renderMensajes();
         </ul>
     <?php endif; ?>
     <div class="acciones">
-        <a class="btn secondary" href="ia.php">Le pedís más detalles a la IA</a>
+        <a class="btn secondary" href="ia.php">Le pide más detalles a la IA</a>
     </div>
 </section>
 

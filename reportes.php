@@ -5,7 +5,7 @@ requerirAdmin();
 render('Reportes', '');
 ?>
 <h1>Reportes</h1>
-<p class="ayuta-filtro">Exportás en Excel con formato o abrís una hoja lista para imprimir/guardar como PDF.</p>
+<p class="ayuta-filtro">Exporta en Excel con formato o abre una hoja lista para imprimir/guardar como PDF.</p>
 
 <div class="card">
     <h2>📦 Productos</h2>
@@ -27,7 +27,7 @@ render('Reportes', '');
 
 <div class="card">
     <h2>💰 Ventas</h2>
-    <p>Seleccionás el periodo y obtenés el detalle de ventas con el total acumulado.</p>
+    <p>Selecciona el periodo y obtén el detalle de ventas con el total acumulado.</p>
     <form method="get" action="reporte_ventas.php" class="toolbar no-print">
         <label>Desde <input type="date" name="desde" value="<?= e(date('Y-m-d')) ?>" required></label>
         <label>Hasta <input type="date" name="hasta" value="<?= e(date('Y-m-d')) ?>" required></label>

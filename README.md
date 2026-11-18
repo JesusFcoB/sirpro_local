@@ -64,9 +64,9 @@ Si tu MySQL tiene usuario o contraseña distintos a `root` sin contraseña, edit
 
 ## Asistente IA (Gemini)
 
-1. Obtené una clave de Google AI Studio: https://aistudio.google.com/apikey (plan gratuito).
-2. Copiá `includes/config_ia.example.php` a `includes/config_ia.php` y rellená el campo `clave`.
-3. Ingresá a Sirpro y abrí **Asistente IA** en el menú. El indicador debe decir **IA lista**.
+1. Obtén una clave de Google AI Studio: https://aistudio.google.com/apikey (plan gratuito).
+2. Copia `includes/config_ia.example.php` a `includes/config_ia.php` y rellena el campo `clave`.
+3. Ingresa a Sirpro y abre **Asistente IA** en el menú. El indicador debe decir **IA lista**.
 4. Opciones de `includes/config_ia.php`:
    - `clave`: tu API key de Google AI Studio.
    - `modelo`: modelo Gemini principal (por defecto `gemini-3.5-flash-lite`, más ligero y estable).
@@ -88,16 +88,16 @@ En **Productos**, el botón **✨ Generar con IA** redacta la descripción y la 
 
 ## Imágenes de productos
 
-- En **Productos** verás el campo "Imagen del producto". Acepta JPG, PNG, GIF o WebP.
+- En **Productos** ves el campo "Imagen del producto". Acepta JPG, PNG, GIF o WebP.
 - La imagen se comprime automáticamente al subirla: se reduce a un máximo de 800 px de lado y se guarda en formato WebP dentro de `assets/productos/`.
 - Deja el campo vacío al editar para conservar la imagen actual. Al desactivar un producto, su imagen se elimina.
-- **Si ya tenías la base de datos creada antes de esta función**, ejecuta `database_imagenes.sql` en phpMyAdmin para agregar la columna de imagen. Las instalaciones nuevas no lo necesitan.
+- **Si ya tienes la base de datos creada antes de esta función**, ejecuta `database_imagenes.sql` en phpMyAdmin para agregar la columna de imagen. Las instalaciones nuevas no lo necesitan.
 
 ## Alertas de stock
 
 - Cada producto tiene un campo **Stock mínimo** (por defecto 5). Cuando el stock está entre 1 y el mínimo se marca como **Stock bajo**; cuando llega a 0, como **Agotado**.
 - Los servicios no generan alertas porque no controlan inventario.
-- **Si ya tenías la base de datos creada antes de esta función**, ejecuta `database_stock.sql` en phpMyAdmin (o desde la línea de comandos de MySQL) para agregar la columna `stock_minimo`. Es seguro ejecutarlo más de una vez. Las instalaciones nuevas no lo necesitan.
+- **Si ya tienes la base de datos creada antes de esta función**, ejecuta `database_stock.sql` en phpMyAdmin (o desde la línea de comandos de MySQL) para agregar la columna `stock_minimo`. Es seguro ejecutarlo más de una vez. Las instalaciones nuevas no lo necesitan.
 
 ## Estructura
 

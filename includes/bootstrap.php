@@ -33,8 +33,8 @@ function db(): PDO
                 . '<link rel="stylesheet" href="/assets/style.css"></head>'
                 . '<body class="login-body"><div class="login-card" style="text-align:center">'
                 . '<h1>Base de datos no disponible</h1>'
-                . '<p>Sirpro no puede conectarse con MySQL. Iniciás MySQL desde el panel de XAMPP '
-                . 'o ejecutás <code>iniciar_sirpro.bat</code> y recargás esta página.</p>'
+                . '<p>Sirpro no puede conectarse con MySQL. Inicia MySQL desde el panel de XAMPP '
+                . 'o ejecuta <code>iniciar_sirpro.bat</code> y recarga esta página.</p>'
                 . '<a class="btn primary" href="javascript:location.reload()">Reintentar</a>'
                 . '</div></body></html>';
             exit;

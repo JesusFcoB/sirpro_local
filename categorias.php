@@ -8,7 +8,7 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrfValido($_POST['csrf'] ?? null)) {
-        $error = 'Sesión no válida. Recargás la página.';
+        $error = 'Sesión no válida. Recarga la página.';
     } else {
         $accion = $_POST['accion'] ?? '';
         $id = idValido($_POST['id'] ?? 0);
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare('SELECT id FROM categorias WHERE id = ?');
                 $stmt->execute([$id]);
                 if ($stmt->fetchColumn() === false) {
-                    $error = 'La categoría ya no existe. Recargás la página.';
+                    $error = 'La categoría ya no existe. Recarga la página.';
                 }
             }
 

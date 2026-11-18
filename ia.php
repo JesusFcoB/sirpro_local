@@ -46,7 +46,7 @@ render('Asistente IA', '');
                 </div>
             </div>
             <form id="ia-form" class="ia-form">
-                <textarea id="ia-input" rows="2" maxlength="800" placeholder="Escribís tu pregunta…" aria-label="Mensaje para el asistente"></textarea>
+                <textarea id="ia-input" rows="2" maxlength="800" placeholder="Escribe tu pregunta…" aria-label="Mensaje para el asistente"></textarea>
                 <div class="ia-acciones-envio">
                     <button id="ia-enviar" class="btn primary" type="submit">Enviar</button>
                     <button id="ia-cancelar" class="btn secondary" type="button" hidden>Detener</button>
@@ -66,7 +66,7 @@ render('Asistente IA', '');
     var sugerencias = {
         analisis: [
             '¿Qué productos debo reponer primero?',
-            'Resumís las ventas de los últimos 30 días',
+            'Resume las ventas de los últimos 30 días',
             '¿Cuáles son mis productos más vendidos?',
             '¿Cuánto vale mi inventario?'
         ],
@@ -77,16 +77,16 @@ render('Asistente IA', '');
             '¿Para qué sirve el stock mínimo?'
         ],
         textos: [
-            'Describís un SSD NVMe de 1TB para venderlo',
-            'Escribís un aviso por stock bajo',
-            'Generás un título para una promo de laptops',
-            'Redactás una descripción para un servicio de mantenimiento'
+            'Describe un SSD NVMe de 1TB para venderlo',
+            'Escribe un aviso por stock bajo',
+            'Genera un título para una promo de laptops',
+            'Redacta una descripción para un servicio de mantenimiento'
         ]
     };
     var bienvenidas = {
-        analisis: 'Hola. Puedo analizar tus ventas e inventario con los datos actuales de Sirpro. Probás una de las preguntas rápidas.',
-        ayuda: 'Hola. Conozco el manual de Sirpro: ventas, productos, stock, reportes y más. ¿Qué necesitás hacer?',
-        textos: 'Hola. Puedo redactar descripciones, avisos y promociones usando tu catálogo real. Me decís qué necesitás.'
+        analisis: 'Hola. Puedo analizar tus ventas e inventario con los datos actuales de Sirpro. Prueba una de las preguntas rápidas.',
+        ayuda: 'Hola. Conozco el manual de Sirpro: ventas, productos, stock, reportes y más. ¿Qué necesitas hacer?',
+        textos: 'Hola. Puedo redactar descripciones, avisos y promociones usando tu catálogo real. Me dices qué necesitas.'
     };
 
     var estadoEl = document.getElementById('ia-estado');

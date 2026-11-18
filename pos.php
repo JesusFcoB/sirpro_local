@@ -22,7 +22,7 @@ render('Punto de venta', '');
     <section class="catalogo">
         <?php if ($stockBajos !== []): ?>
             <p class="alert warning compacto">
-                ⚠️ <?= count($stockBajos) ?> producto(s) con stock bajo o agotado. Verificás existencias antes de cobrar.
+                ⚠️ <?= count($stockBajos) ?> producto(s) con stock bajo o agotado. Verifica existencias antes de cobrar.
             </p>
         <?php endif; ?>
         <div class="toolbar">
@@ -78,7 +78,7 @@ render('Punto de venta', '');
             </thead>
             <tbody id="items"></tbody>
         </table>
-        <p class="vacio" id="vacio">Agregás productos a la venta.</p>
+        <p class="vacio" id="vacio">Agrega productos a la venta.</p>
 
         <div class="totales">
             <div><span>Subtotal</span><strong id="subtotal">$0.00</strong></div>

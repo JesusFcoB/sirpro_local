@@ -9,7 +9,7 @@ header('Cache-Control: no-store');
 
 if (empty($_SESSION['usuario_id'])) {
     http_response_code(401);
-    echo json_encode(['error' => 'Iniciás sesión para usar el asistente.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'Inicia sesión para usar el asistente.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -34,7 +34,7 @@ if (!iaConfigurada()) {
 $datos = json_decode((string) file_get_contents('php://input'), true);
 if (!is_array($datos) || !csrfValido($datos['csrf'] ?? null)) {
     http_response_code(403);
-    echo json_encode(['error' => 'Sesión inválida. Recargás la página e intentás de nuevo.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'Sesión inválida. Recarga la página e intenta de nuevo.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -61,7 +61,7 @@ if ($accion === 'descripcion') {
 
     if ($nombreProducto === '') {
         http_response_code(422);
-        echo json_encode(['error' => 'Escribís el nombre del producto antes de generar la descripción.'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => 'Escribe el nombre del producto antes de generar la descripción.'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -72,12 +72,12 @@ if ($accion === 'descripcion') {
         exit;
     }
 
-    $mensajeProducto = 'Redactá una descripción breve, atractiva y gramaticalmente correcta para ' . $tipoProducto
+    $mensajeProducto = 'Redacta una descripción breve, atractiva y gramaticalmente correcta para ' . $tipoProducto
         . ' llamado "' . $nombreProducto . '"'
         . ($categoriaProducto !== '' ? ' de la categoría ' . $categoriaProducto : '')
-        . '. Corregí la ortografía y las tildes. Usá exclusivamente el nombre, tipo y categoría indicados: '
+        . '. Corrige la ortografía y las tildes. Usa exclusivamente el nombre, tipo y categoría indicados: '
         . 'ignorá el catálogo del contexto y no agregues especificaciones técnicas que no aparezcan en el nombre. '
-        . ($precioProducto !== '' ? 'Si mencionás el precio, usá exactamente ' . $precioProducto : 'No menciones precios.')
+        . ($precioProducto !== '' ? 'Si mencionas el precio, usa exactamente ' . $precioProducto : 'No menciones precios.')
         . ' Máximo 300 caracteres, una sola línea, sin comillas, sin markdown y terminá con punto. Respondé solo la descripción.';
 
     try {
@@ -99,7 +99,7 @@ $modo = (string) ($datos['modo'] ?? 'analisis');
 
 if ($mensaje === '' || mb_strlen($mensaje) > 800) {
     http_response_code(422);
-    echo json_encode(['error' => 'Escribís una pregunta de hasta 800 caracteres.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'Escribe una pregunta de hasta 800 caracteres.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * EJEMPLO DE CONFIGURACIÓN DEL ASISTENTE IA
- * Copiá este archivo como config_ia.php y rellená tu clave de Google AI Studio.
+ * Copia este archivo como config_ia.php y rellena tu clave de Google AI Studio.
  * Nunca subas config_ia.php al repositorio (ya está en .gitignore).
  */
 return [
