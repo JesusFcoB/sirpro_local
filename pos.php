@@ -22,7 +22,7 @@ render('Punto de venta', '');
     <section class="catalogo">
         <?php if ($stockBajos !== []): ?>
             <p class="alert warning compacto">
-                ⚠️ <?= count($stockBajos) ?> producto(s) con stock bajo o agotado. Verifica existencias antes de cobrar.
+                ⚠️ <?= count($stockBajos) ?> producto(s) con stock bajo o agotado. Verificás existencias antes de cobrar.
             </p>
         <?php endif; ?>
         <div class="toolbar">
@@ -78,7 +78,7 @@ render('Punto de venta', '');
             </thead>
             <tbody id="items"></tbody>
         </table>
-        <p class="vacio" id="vacio">Agrega productos a la venta.</p>
+        <p class="vacio" id="vacio">Agregás productos a la venta.</p>
 
         <div class="totales">
             <div><span>Subtotal</span><strong id="subtotal">$0.00</strong></div>
@@ -157,7 +157,7 @@ function agregar(btn) {
         carrito.set(id, { nombre: btn.dataset.nombre, precio: Number(btn.dataset.precio), cantidad: 1, stock, minimo, tipo });
     }
     if (tipo === 'producto' && stock - (actual + 1) <= minimo) {
-        mostrarAviso('Stock bajo de ' + btn.dataset.nombre + ': quedarían ' + (stock - actual - 1) + ' unidades.');
+        mostrarAviso('Stock bajo de ' + btn.dataset.nombre + ': quedan ' + (stock - actual - 1) + ' unidades.');
     } else {
         ocultarError();
     }
@@ -209,7 +209,7 @@ $('#items').addEventListener('change', (ev) => {
         cant = item.stock;
         mostrarError('Stock máximo disponible: ' + item.stock);
     } else if (item.tipo === 'producto' && item.stock - cant <= (item.minimo ?? 5)) {
-        mostrarAviso('Quedarían ' + (item.stock - cant) + ' unidades de ' + item.nombre + ' después de esta venta.');
+        mostrarAviso('Quedan ' + (item.stock - cant) + ' unidades de ' + item.nombre + ' después de esta venta.');
     } else {
         ocultarError();
     }
@@ -244,7 +244,7 @@ $('#cobrar').addEventListener('click', async () => {
         mostrarError('El monto recibido es menor al total.');
         return;
     }
-    if (!confirm('Confirmar cobro de ' + fmt(total) + ' con ' + $('#metodo').value + '?')) {
+    if (!confirm('¿Se confirma el cobro de ' + fmt(total) + ' con ' + $('#metodo').value + '?')) {
         return;
     }
 
@@ -264,7 +264,7 @@ $('#cobrar').addEventListener('click', async () => {
         });
         const data = await res.json();
         if (!res.ok || !data.ok) {
-            mostrarError(data.error || 'No se pudo registrar la venta.');
+            mostrarError(data.error || 'No se puede registrar la venta.');
             return;
         }
         window.location.href = 'ticket.php?id=' + data.venta_id;

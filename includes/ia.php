@@ -339,9 +339,9 @@ function iaLlamarGemini(string $modelo, string $payload, ?callable $onDelta = nu
 
     if ($respuesta === false || $http === 0) {
         if ($errno === 28) { // CURLE_OPERATION_TIMEDOUT
-            throw new IaErrorTransitorio('Gemini tardó demasiado en responder con ' . $modelo . '.');
+            throw new IaErrorTransitorio('Gemini tarda demasiado en responder con ' . $modelo . '.');
         }
-        throw new IaErrorTransitorio('No se pudo conectar con Gemini (' . $modelo . '). ' . $error);
+        throw new IaErrorTransitorio('No se puede conectar con Gemini (' . $modelo . '). ' . $error);
     }
 
     if ($onDelta !== null && $texto !== '') {
@@ -350,7 +350,7 @@ function iaLlamarGemini(string $modelo, string $payload, ?callable $onDelta = nu
 
     $datos = json_decode($onDelta !== null ? $crudo : (string) $respuesta, true);
     if (!is_array($datos)) {
-        throw new IaErrorTransitorio('Gemini devolvió una respuesta que no pude leer.');
+        throw new IaErrorTransitorio('Gemini devuelve una respuesta que no se puede leer.');
     }
 
     $detalle = is_string($datos['error']['message'] ?? null) ? $datos['error']['message'] : '';
@@ -365,7 +365,7 @@ function iaLlamarGemini(string $modelo, string $payload, ?callable $onDelta = nu
         throw new IaErrorTransitorio('Gemini está muy solicitado con ' . $modelo . '. ' . $detalle);
     }
     if ($http >= 400 || isset($datos['error'])) {
-        throw new RuntimeException('Gemini: ' . ($detalle !== '' ? $detalle : 'Revisá la clave y el modelo configurados.'));
+        throw new RuntimeException('Gemini: ' . ($detalle !== '' ? $detalle : 'Revisás la clave y el modelo configurados.'));
     }
 
     if ($onDelta === null) {
@@ -377,8 +377,8 @@ function iaLlamarGemini(string $modelo, string $payload, ?callable $onDelta = nu
     if ($texto === '') {
         $bloqueo = $datos['promptFeedback']['blockReason'] ?? '';
         throw new RuntimeException(
-            $bloqueo !== '' ? 'Gemini bloqueó la pregunta (' . $bloqueo . '). Probá con otras palabras.'
-                            : 'El modelo ' . $modelo . ' no devolvió texto. Probá con otra pregunta.'
+            $bloqueo !== '' ? 'Gemini bloquea la pregunta (' . $bloqueo . '). Probás con otras palabras.'
+                            : 'El modelo ' . $modelo . ' no devuelve texto. Probás con otra pregunta.'
         );
     }
 
@@ -392,7 +392,7 @@ function iaPayload(string $mensaje, string $modo, array $historial): string
         throw new RuntimeException('Modo de asistente no válido.');
     }
     if (!iaConfigurada()) {
-        throw new RuntimeException('El asistente IA todavía no está configurado. Pedile al administrador que rellene includes/config_ia.php con su clave de Google AI Studio.');
+        throw new RuntimeException('El asistente IA todavía no está configurado: el administrador rellena includes/config_ia.php con su clave de Google AI Studio.');
     }
     if (iaProveedor() !== 'gemini') {
         throw new RuntimeException('Proveedor de IA no soportado: ' . iaProveedor());
@@ -422,7 +422,7 @@ function iaPayload(string $mensaje, string $modo, array $historial): string
     ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 
     if ($payload === false) {
-        throw new RuntimeException('No se pudo preparar la pregunta.');
+        throw new RuntimeException('No se puede preparar la pregunta.');
     }
 
     return $payload;
@@ -446,8 +446,8 @@ function iaLlamarIA(string $mensaje, string $modo, array $historial = []): strin
     }
 
     throw new RuntimeException(
-        'Gemini está saturado o respondiendo muy lento en este momento. Se probó con: '
-        . implode(', ', $modelos) . '. Probá de nuevo en unos minutos. ' . ($ultimoError ? $ultimoError->getMessage() : '')
+        'Gemini está saturado o responde muy lento en este momento. Se prueba con: '
+        . implode(', ', $modelos) . '. Probás de nuevo en unos minutos. ' . ($ultimoError ? $ultimoError->getMessage() : '')
     );
 }
 
@@ -471,7 +471,7 @@ function iaLlamarIAStream(string $mensaje, string $modo, array $historial, calla
         }
     }
     throw new RuntimeException(
-        'Gemini está saturado o respondiendo muy lento. Se probó con: '
+        'Gemini está saturado o responde muy lento. Se prueba con: '
         . implode(', ', $modelos) . '. ' . ($ultimoError ? $ultimoError->getMessage() : '')
     );
 }
@@ -488,7 +488,7 @@ function iaEstado(): array
         'incluir_datos' => iaIncluirDatos(),
         'mensaje'       => $configurada
             ? 'Asistente IA listo con ' . iaProveedor() . ' · ' . iaModelo() . ' (respaldo: ' . implode(', ', array_slice(iaModelos(), 1)) . ').'
-            : 'Falta configurar la clave. Pedile al administrador que rellene includes/config_ia.php con su clave de Google AI Studio.',
+            : 'Falta la configuración de la clave: el administrador rellena includes/config_ia.php con su clave de Google AI Studio.',
     ];
 }
 
@@ -509,11 +509,11 @@ function iaVerificarLimite(): ?string
     $enMinuto = count(array_filter($llamadas, static fn($t) => (int) $t > $ahora - 60));
     if ($enMinuto >= $porMinuto) {
         $_SESSION['ia_llamadas'] = $llamadas;
-        return 'Llegaste al límite de ' . $porMinuto . ' preguntas por minuto. Esperá un momento e intentá de nuevo.';
+        return 'Llegás al límite de ' . $porMinuto . ' preguntas por minuto. Esperás un momento e intentás de nuevo.';
     }
     if (count($llamadas) >= $porHora) {
         $_SESSION['ia_llamadas'] = $llamadas;
-        return 'Llegaste al límite de ' . $porHora . ' preguntas por hora. Intentá más tarde.';
+        return 'Llegás al límite de ' . $porHora . ' preguntas por hora. Intentás más tarde.';
     }
 
     $llamadas[] = $ahora;
@@ -614,7 +614,7 @@ function iaSugerenciaLocal(): array
     foreach ($productos as $p) {
         $vendidos = (int) $p['vendidos'];
         $motivo = $vendidos > 0
-            ? 'se vendieron ' . $vendidos . ' unidades en 30 días'
+            ? 'se venden ' . $vendidos . ' unidades en 30 días'
             : 'sin ventas recientes';
         $lineas[] = [
             'nombre' => (string) $p['nombre'],
@@ -630,7 +630,7 @@ function iaSugerenciaLocal(): array
         $lineas
     );
     return [
-        'texto' => 'Reponer primero: ' . implode(', ', $nombres) . '. Priorizá los que más se venden.',
+        'texto' => 'Reponés primero: ' . implode(', ', $nombres) . '. Priorizás los que más se venden.',
         'productos' => $lineas,
     ];
 }

@@ -9,7 +9,7 @@ header('Cache-Control: no-store');
 
 if (empty($_SESSION['usuario_id'])) {
     http_response_code(401);
-    echo json_encode(['error' => 'Iniciá sesión para usar el asistente.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'Iniciás sesión para usar el asistente.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -27,14 +27,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 if (!iaConfigurada()) {
     http_response_code(503);
-    echo json_encode(['error' => 'El asistente IA todavía no está configurado. Pedile al administrador que rellene includes/config_ia.php.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'El asistente IA todavía no está configurado: el administrador rellena includes/config_ia.php.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 $datos = json_decode((string) file_get_contents('php://input'), true);
 if (!is_array($datos) || !csrfValido($datos['csrf'] ?? null)) {
     http_response_code(403);
-    echo json_encode(['error' => 'Sesión inválida. Recargá la página e intentá de nuevo.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'Sesión inválida. Recargás la página e intentás de nuevo.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -61,7 +61,7 @@ if ($accion === 'descripcion') {
 
     if ($nombreProducto === '') {
         http_response_code(422);
-        echo json_encode(['error' => 'Escribí el nombre del producto antes de generar la descripción.'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => 'Escribís el nombre del producto antes de generar la descripción.'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -99,7 +99,7 @@ $modo = (string) ($datos['modo'] ?? 'analisis');
 
 if ($mensaje === '' || mb_strlen($mensaje) > 800) {
     http_response_code(422);
-    echo json_encode(['error' => 'Escribí una pregunta de hasta 800 caracteres.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'Escribís una pregunta de hasta 800 caracteres.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -117,7 +117,7 @@ if ($modo === 'analisis' && ($_SESSION['rol'] ?? '') !== 'admin') {
 
 if ($modo === 'analisis' && !iaIncluirDatos()) {
     http_response_code(403);
-    echo json_encode(['error' => 'El administrador desactivó el envío de datos para el modo análisis.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'El administrador desactiva el envío de datos para el modo análisis.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

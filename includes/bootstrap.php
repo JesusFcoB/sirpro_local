@@ -12,15 +12,33 @@ function db(): PDO
 {
     static $pdo = null;
     if ($pdo === null) {
-        $pdo = new PDO(
-            'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
-            DB_USER,
-            DB_PASS,
-            [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ]
-        );
+        try {
+            $pdo = new PDO(
+                'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
+                DB_USER,
+                DB_PASS,
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                ]
+            );
+        } catch (PDOException $e) {
+            if (!headers_sent()) {
+                http_response_code(503);
+                header('Content-Type: text/html; charset=UTF-8');
+            }
+            echo '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+                . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+                . '<title>Sirpro - Base de datos no disponible</title>'
+                . '<link rel="stylesheet" href="/assets/style.css"></head>'
+                . '<body class="login-body"><div class="login-card" style="text-align:center">'
+                . '<h1>Base de datos no disponible</h1>'
+                . '<p>Sirpro no puede conectarse con MySQL. Iniciás MySQL desde el panel de XAMPP '
+                . 'o ejecutás <code>iniciar_sirpro.bat</code> y recargás esta página.</p>'
+                . '<a class="btn primary" href="javascript:location.reload()">Reintentar</a>'
+                . '</div></body></html>';
+            exit;
+        }
     }
     return $pdo;
 }

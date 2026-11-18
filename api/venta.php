@@ -14,13 +14,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     responder(405, ['ok' => false, 'error' => 'Método no permitido.']);
 }
 if (empty($_SESSION['usuario_id'])) {
-    responder(401, ['ok' => false, 'error' => 'Sesión expirada. Inicia sesión de nuevo.']);
+    responder(401, ['ok' => false, 'error' => 'Sesión expirada. Iniciás sesión de nuevo.']);
 }
 
 $raw = file_get_contents('php://input');
 $entrada = json_decode($raw === false ? '' : $raw, true, 32);
 if (!is_array($entrada) || !csrfValido($entrada['csrf'] ?? null)) {
-    responder(400, ['ok' => false, 'error' => 'Solicitud no válida. Recarga la página.']);
+    responder(400, ['ok' => false, 'error' => 'Solicitud no válida. Recargás la página.']);
 }
 
 $items = $entrada['items'] ?? null;

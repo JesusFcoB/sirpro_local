@@ -10,7 +10,7 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrfValido($_POST['csrf'] ?? null)) {
-        $error = 'Sesión no válida. Recarga la página.';
+        $error = 'Sesión no válida. Recargás la página.';
     } else {
         $accion = $_POST['accion'] ?? '';
         $id = idValido($_POST['id'] ?? 0);
@@ -28,16 +28,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $minimo = numeroValido($_POST['stock_minimo'] ?? 5, 0, 1000000);
 
             if ($precio === null || $stock === null || $minimo === null || ($ofertaTexto !== '' && $oferta === null)) {
-                $error = 'Revisa los valores numéricos: precio, stock y mínimo deben ser válidos.';
+                $error = 'Revisás los valores numéricos: precio, stock y mínimo deben ser válidos.';
             } elseif ($sku === '' || $nombre === '' || $categoria <= 0) {
-                $error = 'Completa SKU, nombre y categoría.';
+                $error = 'Completás SKU, nombre y categoría.';
             } elseif ($oferta !== null && $oferta > $precio) {
                 $error = 'El precio de oferta no puede ser mayor al precio normal.';
             } else {
                 $stmt = $pdo->prepare('SELECT COUNT(*) FROM categorias WHERE id = ?');
                 $stmt->execute([$categoria]);
                 if ((int) $stmt->fetchColumn() === 0) {
-                    $error = 'La categoría seleccionada ya no existe. Recarga la página.';
+                    $error = 'La categoría seleccionada ya no existe. Recargás la página.';
                 }
             }
 
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $imagen = comprimirImagen($_FILES['imagen']['tmp_name'], $DIR_IMAGENES);
                     if ($imagen === null) {
-                        $error = 'El archivo de imagen no es válido. Usa JPG, PNG, GIF o WebP.';
+                        $error = 'El archivo de imagen no es válido. Usás JPG, PNG, GIF o WebP.';
                     }
                 }
             }
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         irA('productos.php' . ($id > 0 ? '?editar=' . $id : ''));
                     }
                 } catch (PDOException $ex) {
-                    $error = 'No se pudo guardar. Revisa que el SKU no esté repetido.';
+                    $error = 'No se guarda. Verificás si el SKU está repetido.';
                 }
             }
         } elseif ($accion === 'stock' && $id > 0) {
@@ -185,7 +185,7 @@ render('Productos', '');
 <?php if ((int) ($resumenStock['agotados'] ?? 0) > 0 || (int) ($resumenStock['bajos'] ?? 0) > 0): ?>
     <p class="alert warning">
         ⚠️ Hay <?= (int) $resumenStock['agotados'] ?> producto(s) agotado(s) y
-        <?= (int) $resumenStock['bajos'] ?> con stock bajo. Repón antes de vender.
+        <?= (int) $resumenStock['bajos'] ?> con stock bajo. Reponés antes de vender.
     </p>
 <?php endif; ?>
 
@@ -199,7 +199,7 @@ render('Productos', '');
         <label>Nombre <input type="text" name="nombre" maxlength="150" value="<?= e($f['nombre']) ?>" required></label>
         <label>Categoría
             <select name="categoria_id" required>
-                <option value="">Selecciona...</option>
+                <option value="">Seleccionás...</option>
                 <?php foreach ($categorias as $c): ?>
                     <option value="<?= (int) $c['id'] ?>" <?= (int) $f['categoria_id'] === (int) $c['id'] ? 'selected' : '' ?>><?= e($c['nombre']) ?></option>
                 <?php endforeach; ?>
@@ -226,7 +226,7 @@ render('Productos', '');
             <input type="file" name="imagen" accept="image/jpeg,image/png,image/gif,image/webp">
             <?php if (!empty($f['imagen'])): ?>
                 <img src="<?= e(rutaImagen($f['imagen'])) ?>" alt="Imagen actual" style="max-height:70px;border-radius:6px;margin-top:6px">
-                <small>Deja el campo vacío para conservar la imagen actual.</small>
+                <small>Dejás el campo vacío para conservar la imagen actual.</small>
             <?php endif; ?>
         </label>
         <div class="acciones">
@@ -276,7 +276,7 @@ render('Productos', '');
             <td><?= badgeStock((int) $p['stock'], $minimo, $p['tipo']) ?><small>mín. <?= $minimo ?></small></td>
             <td class="acciones-fila">
                 <a href="productos.php?editar=<?= (int) $p['id'] ?>">Editar</a>
-                <form method="post" class="inline" onsubmit="return confirm('¿Desactivar este producto? No se podrá vender.')">
+                <form method="post" class="inline" onsubmit="return confirm('¿Se desactiva este producto? No se puede vender.')">
                     <?= csrfCampo() ?>
                     <input type="hidden" name="accion" value="desactivar">
                     <input type="hidden" name="id" value="<?= (int) $p['id'] ?>">
@@ -305,7 +305,7 @@ render('Productos', '');
     boton.addEventListener('click', async function () {
         var nombre = (campo('nombre') || {}).value || '';
         if (!nombre.trim()) {
-            estado.textContent = 'Escribí primero el nombre del producto.';
+            estado.textContent = 'Escribís primero el nombre del producto.';
             return;
         }
         var categoriaSelect = campo('categoria_id');
@@ -328,11 +328,11 @@ render('Productos', '');
                 })
             });
             var datos = await r.json();
-            if (!r.ok || datos.error) throw new Error(datos.error || 'No se pudo generar la descripción.');
+            if (!r.ok || datos.error) throw new Error(datos.error || 'No se puede generar la descripción.');
             campo('descripcion').value = datos.descripcion;
-            estado.textContent = 'Descripción generada, corregida y ajustada. Revisala antes de guardar.';
+            estado.textContent = 'Se genera, se corrige y se ajusta la descripción. La revisás antes de guardar.';
         } catch (e) {
-            estado.textContent = e.message || 'No se pudo generar la descripción.';
+            estado.textContent = e.message || 'No se puede generar la descripción.';
         } finally {
             boton.disabled = false;
             boton.textContent = '✨ Generar con IA';

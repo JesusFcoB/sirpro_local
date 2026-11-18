@@ -46,7 +46,7 @@ render('Asistente IA', '');
                 </div>
             </div>
             <form id="ia-form" class="ia-form">
-                <textarea id="ia-input" rows="2" maxlength="800" placeholder="Escribí tu pregunta…" aria-label="Mensaje para el asistente"></textarea>
+                <textarea id="ia-input" rows="2" maxlength="800" placeholder="Escribís tu pregunta…" aria-label="Mensaje para el asistente"></textarea>
                 <div class="ia-acciones-envio">
                     <button id="ia-enviar" class="btn primary" type="submit">Enviar</button>
                     <button id="ia-cancelar" class="btn secondary" type="button" hidden>Detener</button>
@@ -66,7 +66,7 @@ render('Asistente IA', '');
     var sugerencias = {
         analisis: [
             '¿Qué productos debo reponer primero?',
-            'Resumí las ventas de los últimos 30 días',
+            'Resumís las ventas de los últimos 30 días',
             '¿Cuáles son mis productos más vendidos?',
             '¿Cuánto vale mi inventario?'
         ],
@@ -77,16 +77,16 @@ render('Asistente IA', '');
             '¿Para qué sirve el stock mínimo?'
         ],
         textos: [
-            'Describí un SSD NVMe de 1TB para venderlo',
-            'Escribí un aviso por stock bajo',
-            'Generá un título para una promo de laptops',
-            'Redactá una descripción para un servicio de mantenimiento'
+            'Describís un SSD NVMe de 1TB para venderlo',
+            'Escribís un aviso por stock bajo',
+            'Generás un título para una promo de laptops',
+            'Redactás una descripción para un servicio de mantenimiento'
         ]
     };
     var bienvenidas = {
-        analisis: 'Hola. Puedo analizar tus ventas e inventario con los datos actuales de Sirpro. Probá una de las preguntas rápidas.',
+        analisis: 'Hola. Puedo analizar tus ventas e inventario con los datos actuales de Sirpro. Probás una de las preguntas rápidas.',
         ayuda: 'Hola. Conozco el manual de Sirpro: ventas, productos, stock, reportes y más. ¿Qué necesitás hacer?',
-        textos: 'Hola. Puedo redactar descripciones, avisos y promociones usando tu catálogo real. Decime qué necesitás.'
+        textos: 'Hola. Puedo redactar descripciones, avisos y promociones usando tu catálogo real. Me decís qué necesitás.'
     };
 
     var estadoEl = document.getElementById('ia-estado');
@@ -188,7 +188,7 @@ render('Asistente IA', '');
             var r = await fetch('api/ia.php?estado=1', { cache: 'no-store' });
             mostrarEstado(await r.json());
         } catch (e) {
-            mostrarEstado({ configurada: false, mensaje: 'No se pudo consultar el estado del asistente.' });
+            mostrarEstado({ configurada: false, mensaje: 'No se puede consultar el estado del asistente.' });
         }
     }
 
@@ -273,7 +273,7 @@ render('Asistente IA', '');
 
             if (!r.ok) {
                 var datosError = await r.json().catch(function () { return {}; });
-                throw new Error(datosError.error || 'No se pudo obtener una respuesta.');
+                throw new Error(datosError.error || 'No se puede obtener una respuesta.');
             }
 
             var lector = r.body.getReader();
@@ -309,7 +309,7 @@ render('Asistente IA', '');
 
             if (fueCancelado && texto === '') texto = 'Generación detenida.';
             burbuja.classList.remove('ia-typing');
-            burbuja.innerHTML = formatear(texto || 'El asistente no devolvió texto.');
+            burbuja.innerHTML = formatear(texto || 'El asistente no devuelve texto.');
             historial.push({ rol: 'usuario', contenido: mensaje });
             historial.push({ rol: 'asistente', contenido: texto });
             if (historial.length > 8) historial = historial.slice(-8);

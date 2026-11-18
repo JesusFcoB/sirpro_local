@@ -19,8 +19,8 @@ set "MYSQL_INICIADO=0"
 
 if not exist "%XAMPP%\php\php.exe" set "XAMPP=D:\xampp"
 if not exist "%XAMPP%\php\php.exe" (
-    echo No se encontr¢ XAMPP en C:\xampp ni D:\xampp.
-    echo Edita la variable XAMPP dentro de este archivo y vuelve a intentarlo.
+    echo No se encuentra XAMPP en C:\xampp ni D:\xampp.
+    echo Edit s la variable XAMPP dentro de este archivo y lo intent s de nuevo.
     pause
     exit /b 1
 )
@@ -51,7 +51,7 @@ set /a INTENTOS=0
 if not errorlevel 1 goto mysql_listo
 set /a INTENTOS+=1
 if %INTENTOS% gtr 60 (
-    echo No se pudo iniciar MySQL. Revisa el panel de XAMPP.
+    echo No se puede iniciar MySQL. Revis s el panel de XAMPP.
     pause
     exit /b 1
 )
@@ -68,7 +68,7 @@ if not errorlevel 1 goto db_lista
 echo Creando la base de datos sirpro ^(solo la primera vez^)...
 "%MYSQLBIN%\mysql.exe" -u root --default-character-set=utf8mb4 < "%BASE%database.sql"
 if errorlevel 1 (
-    echo Ocurri¢ un problema al importar database.sql
+    echo Ocurre un problema al importar database.sql
     pause
     exit /b 1
 )
@@ -102,8 +102,8 @@ echo      http://127.0.0.1:%PUERTO%
 echo  Usuario: admin     Contrase¤a: admin123
 echo ------------------------------------------
 echo.
-echo  NO cierres esta ventana con la X.
-echo  Presiona una tecla para detener los servicios y cerrar.
+echo  NO cerr s esta ventana con la X.
+echo  Presion s una tecla para detener los servicios y cerrar.
 echo.
 
 set "AUTO=0"

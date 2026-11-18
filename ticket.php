@@ -29,7 +29,7 @@ render('Ticket ' . $venta['folio'], '');
         </div>
         <p>Folio: <strong><?= e($venta['folio']) ?></strong><br>
            Fecha: <?= e(date('d/m/Y H:i', strtotime($venta['created_at']))) ?><br>
-           Atendió: <?= e($venta['cajero']) ?></p>
+           Atiende: <?= e($venta['cajero']) ?></p>
         <table>
             <thead><tr><th>Producto</th><th>Cant.</th><th>Importe</th></tr></thead>
             <tbody>
