@@ -24,11 +24,14 @@ function exportarExcel(
 ): never {
     $nombre = preg_replace('/[^A-Za-z0-9_-]/', '_', $archivo) ?: 'reporte';
 
-    // Logo incrustado para que se vea tambien al abrir el .xls fuera del navegador
-    $logoArchivo = dirname(__DIR__) . '/assets/logo.png';
-    $logo = is_file($logoArchivo)
-        ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($logoArchivo))
-        : '';
+    // Excel no dibuja imagenes data:image/png;base64 en archivos HTML .xls:
+    // muestra "No se puede mostrar la imagen vinculada". Se usa la ruta local absoluta.
+    $logoArchivo = realpath(dirname(__DIR__) . '/assets/logo.png');
+    $logo = '';
+    if ($logoArchivo !== false) {
+        $ruta = str_replace('\\', '/', $logoArchivo);
+        $logo = 'file:///' . str_replace(' ', '%20', ltrim($ruta, '/'));
+    }
 
     header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
     header('Content-Disposition: attachment; filename="' . $nombre . '_' . date('Y-m-d') . '.xls"');
