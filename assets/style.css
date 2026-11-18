@@ -5,6 +5,24 @@
     --borde: #d6dde8;
     --rojo: #b91c1c;
     --verde: #15803d;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-sec: #475569;
+    --tabla-head: #f8fafc;
+}
+body.dark {
+    --azul: #60a5fa;
+    --azul-oscuro: #e2e8f0;
+    --gris: #0f172a;
+    --borde: #334155;
+    --rojo: #f87171;
+    --verde: #4ade80;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #e2e8f0;
+    --text-sec: #94a3b8;
+    --tabla-head: #334155;
 }
 
 * { box-sizing: border-box; }
@@ -12,14 +30,29 @@
 body {
     margin: 0;
     font-family: "Segoe UI", Arial, sans-serif;
-    background: var(--gris);
-    color: #1e293b;
+    background: var(--bg);
+    color: var(--text);
 }
 
 main { padding: 20px; max-width: 1400px; margin: 0 auto; }
 
 h1 { margin-top: 0; color: var(--azul-oscuro); }
 h2 { margin-top: 0; font-size: 1.15rem; color: var(--azul-oscuro); }
+
+/* Modo oscuro */
+body.dark { color: var(--text); }
+body.dark .login-card { background: var(--card); color: var(--text); }
+body.dark .catalogo, body.dark .carrito, body.dark .card, body.dark .tabla, body.dark .ticket { background: var(--card); border-color: var(--borde); color: var(--text); }
+body.dark th { background: var(--tabla-head); color: var(--text-sec); }
+body.dark input, body.dark select { background: #0f172a; color: var(--text); border-color: var(--borde); }
+body.dark .btn { background: #334155; color: var(--text); border-color: var(--borde); }
+body.dark .btn:hover { background: #475569; }
+body.dark .btn.primary { background: var(--azul); border-color: var(--azul); color: #fff; }
+body.dark .tarjeta { background: #1e293b; border-color: var(--borde); color: var(--text); }
+body.dark .vacio, body.dark .resumen, body.dark label { color: var(--text-sec); }
+body.dark .alert.ok { background: #14532d; color: #bbf7d0; }
+body.dark .alert.error { background: #7f1d1d; color: #fecaca; }
+body.dark .toggle-dark { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
 
 .topbar {
     display: flex;

@@ -16,28 +16,35 @@ $productos = $pdo->query(
 $formato = $_GET['formato'] ?? 'pdf';
 
 if ($formato === 'excel') {
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="productos_' . date('Y-m-d') . '.csv"');
-    $salida = fopen('php://output', 'w');
-    fprintf($salida, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM para Excel
-    fputcsv($salida, ['SKU', 'Nombre', 'Categoría', 'Tipo', 'Descripción', 'Precio', 'Precio oferta', 'Stock']);
+    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+    header('Content-Disposition: attachment; filename="productos_' . date('Y-m-d') . '.xls"');
+    echo "\xEF\xBB\xBF";
+    echo '<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+        body{font-family:Segoe UI,Arial,sans-serif;font-size:12pt;}
+        h1{color:#0f1f4d;border-bottom:2px solid #1d4ed8;padding-bottom:6px;}
+        table{border-collapse:collapse;width:100%;}
+        th{background:#1d4ed8;color:#fff;padding:8px;text-align:left;}
+        td{border:1px solid #d6dde8;padding:6px;}
+        tr:nth-child(even){background:#f1f5f9;}
+    </style></head><body>';
+    echo '<h1>Reporte de productos - Sirpro</h1>';
+    echo '<p>Fecha: ' . date('d/m/Y H:i') . '</p>';
+    echo '<table><thead><tr><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Tipo</th><th>Precio</th><th>Oferta</th><th>Stock</th></tr></thead><tbody>';
     foreach ($productos as $p) {
-        fputcsv($salida, [
-            $p['sku'],
-            $p['nombre'],
-            $p['categoria'],
-            $p['tipo'] === 'servicio' ? 'Servicio' : 'Producto',
-            $p['descripcion'],
-            number_format((float) $p['precio'], 2, '.', ''),
-            $p['precio_oferta'] !== null ? number_format((float) $p['precio_oferta'], 2, '.', '') : '',
-            $p['stock'],
-        ]);
+        $tipo = $p['tipo'] === 'servicio' ? 'Servicio' : 'Producto';
+        $oferta = $p['precio_oferta'] !== null ? '$' . number_format((float) $p['precio_oferta'], 2) : '—';
+        echo '<tr><td>' . htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') . '</td>';
+        echo '<td>' . htmlspecialchars($p['nombre'], ENT_QUOTES, 'UTF-8') . '</td>';
+        echo '<td>' . htmlspecialchars($p['categoria'], ENT_QUOTES, 'UTF-8') . '</td>';
+        echo '<td>' . $tipo . '</td>';
+        echo '<td>$' . number_format((float) $p['precio'], 2) . '</td>';
+        echo '<td>' . $oferta . '</td>';
+        echo '<td>' . (int) $p['stock'] . '</td></tr>';
     }
-    fclose($salida);
+    echo '</tbody></table></body></html>';
     exit;
 }
 
-// Formato PDF: vista imprimible
 render('Reporte de productos', '');
 ?>
 <div class="ticket-wrap" style="max-width: 1000px;">

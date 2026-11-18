@@ -80,6 +80,12 @@ function render(string $titulo, string $contenido): void
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{$titulo} - Sirpro</title>
 <link rel="stylesheet" href="assets/style.css">
+<script>
+(function(){
+  if (localStorage.getItem('sirpro-dark') === '1') document.body.classList.add('dark');
+})();
+function toggleDark(){ document.body.classList.toggle('dark'); localStorage.setItem('sirpro-dark', document.body.classList.contains('dark') ? '1' : '0'); }
+</script>
 </head>
 <body>
 <header class="topbar">
@@ -87,7 +93,7 @@ function render(string $titulo, string $contenido): void
     <nav>
         {$links}
     </nav>
-    <div class="user">{$nombre} <a href="logout.php">Salir</a></div>
+    <div class="user"><button class="toggle-dark" type="button" onclick="toggleDark()" title="Modo oscuro">🌙</button> {$nombre} <a href="logout.php">Salir</a></div>
 </header>
 <main>
 HTML;
