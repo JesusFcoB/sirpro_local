@@ -24,6 +24,12 @@ function exportarExcel(
 ): never {
     $nombre = preg_replace('/[^A-Za-z0-9_-]/', '_', $archivo) ?: 'reporte';
 
+    // Logo incrustado para que se vea tambien al abrir el .xls fuera del navegador
+    $logoArchivo = dirname(__DIR__) . '/assets/logo.png';
+    $logo = is_file($logoArchivo)
+        ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($logoArchivo))
+        : '';
+
     header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
     header('Content-Disposition: attachment; filename="' . $nombre . '_' . date('Y-m-d') . '.xls"');
     header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -32,9 +38,12 @@ function exportarExcel(
     $css = <<<'CSS'
     <style>
       body{font-family:'Segoe UI',Arial,sans-serif;font-size:10pt;color:#1e293b;margin:0;}
-      .banda{background:#0f1f4d;color:#ffffff;padding:14px 18px;border-radius:8px;}
-      .banda h1{margin:0;font-size:16pt;letter-spacing:-.3px;}
-      .banda p{margin:4px 0 0;color:#bfdbfe;font-size:9pt;}
+      .cabecera{border-bottom:3px solid #1d4ed8;padding-bottom:10px;margin-bottom:12px;}
+      .cabecera table{width:100%;}
+      .cabecera td{border:0;padding:0;vertical-align:middle;}
+      .cabecera img{height:52px;}
+      .cabecera h1{margin:0;font-size:16pt;color:#0f1f4d;letter-spacing:-.3px;}
+      .cabecera p{margin:3px 0 0;color:#64748b;font-size:9pt;}
       .meta{margin:14px 0 10px;color:#475569;font-size:9pt;}
       .meta span{margin-right:26px;white-space:nowrap;}
       .meta strong{color:#0f1f4d;}
@@ -57,7 +66,12 @@ function exportarExcel(
     echo '</x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
     echo $css . '</head><body>';
 
-    echo '<div class="banda"><h1>' . e($titulo) . '</h1><p>Sirpro · Soluciones Profesionales</p></div>';
+    echo '<div class="cabecera"><table><tr>';
+    if ($logo !== '') {
+        echo '<td style="width:230px;"><img src="' . $logo . '" width="230" height="50" alt="Sirpro"></td>';
+    }
+    echo '<td><h1>' . e($titulo) . '</h1><p>Sirpro · Soluciones Profesionales</p></td>';
+    echo '</tr></table></div>';
 
     if ($meta !== []) {
         echo '<div class="meta">';

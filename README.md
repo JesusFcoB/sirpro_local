@@ -11,7 +11,7 @@ Sistema de punto de venta local para Sirpro. Incluye:
 - **Ticket** imprimible.
 - **Inventario y precios** (solo admin): alta/edición de productos, ajuste de stock, precios de oferta y desactivación.
 - **Categorías** (solo admin): CRUD completo para gestionar categorías.
-- **Reportes** (solo admin): exporta productos, categorías y ventas a Excel con formato (`.xls`: encabezados, anchos, números y totales) o abre una hoja lista para imprimir/guardar como PDF.
+- **Reportes** (solo admin): exporta productos, categorías y ventas a Excel con formato (`.xls`: logo y membrete como en el PDF, encabezados, anchos, números y totales) o abre una hoja lista para imprimir/guardar como PDF.
 - **Modo oscuro**: botón 🌙/☀️ en la barra superior; recuerda la preferencia y mantiene legibles textos, tablas, alertas y hojas de impresión.
 - **Operaciones más seguras**: token CSRF en todos los formularios, validación estricta de ids/fechas/montos, comprobación de categorías, límites de subida de imágenes, confirmación antes de cobrar y redirección después de guardar para evitar duplicar acciones con F5.
 - **Fotos de productos** con compresión automática: al subir una imagen se reduce a máximo 800 px y se convierte a WebP (puede pasar de 3 MB a ~50 KB sin perder calidad visible).
