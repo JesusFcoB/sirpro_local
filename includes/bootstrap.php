@@ -246,9 +246,6 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 <header class="topbar">
     <div class="brand"><img src="assets/logo.png" alt="Sirpro" onerror="this.onerror=function(){this.style.display='none'};this.src='assets/logo.svg'"><span>Sirpro</span></div>
-    <nav>
-        {$links}
-    </nav>
     <div class="user">
         <div class="reloj" id="reloj" aria-label="Fecha y hora actual">
             <span class="reloj-fecha">—</span>
@@ -257,6 +254,10 @@ document.addEventListener('DOMContentLoaded', function(){
         <button class="btn ghost mini" id="dark-btn" type="button" onclick="toggleDark()" title="Cambiar modo oscuro">🌙</button> {$nombre} <a class="btn ghost mini" href="logout.php">Salir</a>
     </div>
 </header>
+<div class="opciones-bar">
+    <span class="opciones-titulo">Opciones</span>
+    {$links}
+</div>
 <main>
 HTML;
 }
