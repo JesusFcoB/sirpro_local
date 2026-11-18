@@ -215,7 +215,13 @@ render('Productos', '');
         <label>Precio oferta <input type="number" name="precio_oferta" step="0.01" min="0" max="100000000" value="<?= e($f['precio_oferta']) ?>"></label>
         <label>Stock actual <input type="number" name="stock" min="0" max="1000000" value="<?= (int) $f['stock'] ?>"></label>
         <label>Stock mínimo (alerta) <input type="number" name="stock_minimo" min="0" max="1000000" value="<?= (int) ($f['stock_minimo'] ?? 5) ?>"></label>
-        <label class="ancho">Descripción <input type="text" name="descripcion" maxlength="500" value="<?= e($f['descripcion']) ?>"></label>
+        <label class="ancho">Descripción
+            <span class="ia-desc-fila">
+                <input type="text" name="descripcion" maxlength="500" value="<?= e($f['descripcion']) ?>">
+                <button id="ia-descripcion-btn" class="btn secondary mini" type="button">✨ Generar con IA</button>
+            </span>
+            <small id="ia-descripcion-estado" class="ia-desc-estado"></small>
+        </label>
         <label class="ancho">Imagen del producto (se comprime automáticamente, máx. 5 MB)
             <input type="file" name="imagen" accept="image/jpeg,image/png,image/gif,image/webp">
             <?php if (!empty($f['imagen'])): ?>
@@ -284,4 +290,54 @@ render('Productos', '');
     <?php endif; ?>
     </tbody>
 </table>
+
+<script>
+(function () {
+    'use strict';
+    var boton = document.getElementById('ia-descripcion-btn');
+    var estado = document.getElementById('ia-descripcion-estado');
+    if (!boton) return;
+    var form = boton.closest('form');
+    var csrf = <?php echo json_encode(csrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+
+    function campo(nombre) { return form.querySelector('[name="' + nombre + '"]'); }
+
+    boton.addEventListener('click', async function () {
+        var nombre = (campo('nombre') || {}).value || '';
+        if (!nombre.trim()) {
+            estado.textContent = 'Escribí primero el nombre del producto.';
+            return;
+        }
+        var categoriaSelect = campo('categoria_id');
+        var categoria = categoriaSelect && categoriaSelect.selectedIndex > 0
+            ? categoriaSelect.options[categoriaSelect.selectedIndex].text : '';
+        boton.disabled = true;
+        boton.textContent = 'Generando…';
+        estado.textContent = '';
+        try {
+            var r = await fetch('api/ia.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    csrf: csrf,
+                    accion: 'descripcion',
+                    nombre: nombre,
+                    categoria: categoria,
+                    precio: (campo('precio') || {}).value || '',
+                    tipo: (campo('tipo') || {}).value || 'producto'
+                })
+            });
+            var datos = await r.json();
+            if (!r.ok || datos.error) throw new Error(datos.error || 'No se pudo generar la descripción.');
+            campo('descripcion').value = datos.descripcion;
+            estado.textContent = 'Descripción generada. Revisala antes de guardar.';
+        } catch (e) {
+            estado.textContent = e.message || 'No se pudo generar la descripción.';
+        } finally {
+            boton.disabled = false;
+            boton.textContent = '✨ Generar con IA';
+        }
+    });
+})();
+</script>
 <?php renderFin(); ?>

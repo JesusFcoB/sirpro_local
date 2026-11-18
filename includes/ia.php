@@ -18,6 +18,8 @@ function iaConfig(): array
             'modelos_alternativos'=> ['gemini-3.8-flash'],
             'timeout'             => 35,
             'incluir_datos'       => true,
+            'limite_por_minuto'   => 8,
+            'limite_por_hora'     => 40,
         ];
 
         $archivo = __DIR__ . '/config_ia.php';
@@ -281,22 +283,54 @@ function iaSystemPrompt(string $modo): string
 }
 
 /** Llamada simple a un modelo de Gemini. Puede lanzar IaErrorTransitorio. */
-function iaLlamarGemini(string $modelo, string $payload): string
+function iaLlamarGemini(string $modelo, string $payload, ?callable $onDelta = null): string
 {
-    $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
-        . rawurlencode($modelo)
-        . ':generateContent?key=' . rawurlencode(iaClave());
+    $base = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($modelo);
+    $url = $onDelta !== null
+        ? $base . ':streamGenerateContent?alt=sse&key=' . rawurlencode(iaClave())
+        : $base . ':generateContent?key=' . rawurlencode(iaClave());
 
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
+    $texto = '';
+    $crudo = '';
+    $opciones = [
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => $payload,
         CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_RETURNTRANSFER => $onDelta === null,
         CURLOPT_CONNECTTIMEOUT => 8,
         CURLOPT_TIMEOUT        => iaTimeout(),
-    ]);
+    ];
 
+    if ($onDelta !== null) {
+        $buffer = '';
+        $opciones[CURLOPT_WRITEFUNCTION] = static function ($ch, $fragmento) use (&$texto, &$crudo, &$buffer, $onDelta) {
+            $largo = strlen($fragmento);
+            $crudo .= $fragmento;
+            $buffer .= str_replace("\r\n", "\n", $fragmento);
+            while (($pos = strpos($buffer, "\n\n")) !== false) {
+                $bloque = trim(substr($buffer, 0, $pos));
+                $buffer = substr($buffer, $pos + 2);
+                if (!str_starts_with($bloque, 'data:')) {
+                    continue;
+                }
+                $evento = json_decode(trim(substr($bloque, 5)), true);
+                if (!is_array($evento)) {
+                    continue;
+                }
+                foreach (($evento['candidates'][0]['content']['parts'] ?? []) as $parte) {
+                    $delta = (string) ($parte['text'] ?? '');
+                    if ($delta !== '') {
+                        $texto .= $delta;
+                        $onDelta($delta);
+                    }
+                }
+            }
+            return $largo;
+        };
+    }
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, $opciones);
     $respuesta = curl_exec($ch);
     $errno = (int) curl_errno($ch);
     $error = (string) curl_error($ch);
@@ -310,7 +344,11 @@ function iaLlamarGemini(string $modelo, string $payload): string
         throw new IaErrorTransitorio('No se pudo conectar con Gemini (' . $modelo . '). ' . $error);
     }
 
-    $datos = json_decode((string) $respuesta, true);
+    if ($onDelta !== null && $texto !== '') {
+        return trim($texto);
+    }
+
+    $datos = json_decode($onDelta !== null ? $crudo : (string) $respuesta, true);
     if (!is_array($datos)) {
         throw new IaErrorTransitorio('Gemini devolvió una respuesta que no pude leer.');
     }
@@ -330,9 +368,10 @@ function iaLlamarGemini(string $modelo, string $payload): string
         throw new RuntimeException('Gemini: ' . ($detalle !== '' ? $detalle : 'Revisá la clave y el modelo configurados.'));
     }
 
-    $texto = '';
-    foreach (($datos['candidates'][0]['content']['parts'] ?? []) as $part) {
-        $texto .= (string) ($part['text'] ?? '');
+    if ($onDelta === null) {
+        foreach (($datos['candidates'][0]['content']['parts'] ?? []) as $part) {
+            $texto .= (string) ($part['text'] ?? '');
+        }
     }
     $texto = trim($texto);
     if ($texto === '') {
@@ -346,8 +385,8 @@ function iaLlamarGemini(string $modelo, string $payload): string
     return $texto;
 }
 
-/** Llama a Gemini probando el modelo principal y luego los alternativos. */
-function iaLlamarIA(string $mensaje, string $modo, array $historial = []): string
+/** Prepara el payload común de Gemini. */
+function iaPayload(string $mensaje, string $modo, array $historial): string
 {
     if (!iaModoValido($modo)) {
         throw new RuntimeException('Modo de asistente no válido.');
@@ -386,6 +425,13 @@ function iaLlamarIA(string $mensaje, string $modo, array $historial = []): strin
         throw new RuntimeException('No se pudo preparar la pregunta.');
     }
 
+    return $payload;
+}
+
+/** Llama a Gemini probando el modelo principal y luego los alternativos. */
+function iaLlamarIA(string $mensaje, string $modo, array $historial = []): string
+{
+    $payload = iaPayload($mensaje, $modo, $historial);
     $modelos = iaModelos();
     $ultimoError = null;
     foreach ($modelos as $indice => $modelo) {
@@ -405,6 +451,31 @@ function iaLlamarIA(string $mensaje, string $modo, array $historial = []): strin
     );
 }
 
+/** Versión con streaming: envía fragmentos de texto a $onDelta. */
+function iaLlamarIAStream(string $mensaje, string $modo, array $historial, callable $onDelta, ?callable $onReset = null): string
+{
+    $payload = iaPayload($mensaje, $modo, $historial);
+    $modelos = iaModelos();
+    $ultimoError = null;
+    foreach ($modelos as $indice => $modelo) {
+        try {
+            return iaLlamarGemini($modelo, $payload, $onDelta);
+        } catch (IaErrorTransitorio $e) {
+            $ultimoError = $e;
+            if ($indice < count($modelos) - 1) {
+                if ($onReset !== null) {
+                    $onReset();
+                }
+                usleep(400000);
+            }
+        }
+    }
+    throw new RuntimeException(
+        'Gemini está saturado o respondiendo muy lento. Se probó con: '
+        . implode(', ', $modelos) . '. ' . ($ultimoError ? $ultimoError->getMessage() : '')
+    );
+}
+
 /** Estado que muestra la interfaz (nunca incluye la clave). */
 function iaEstado(): array
 {
@@ -418,5 +489,116 @@ function iaEstado(): array
         'mensaje'       => $configurada
             ? 'Asistente IA listo con ' . iaProveedor() . ' · ' . iaModelo() . ' (respaldo: ' . implode(', ', array_slice(iaModelos(), 1)) . ').'
             : 'Falta configurar la clave. Pedile al administrador que rellene includes/config_ia.php con su clave de Google AI Studio.',
+    ];
+}
+
+/** Límite de uso por usuario (evita agotar la clave con spam). */
+function iaVerificarLimite(): ?string
+{
+    $config = iaConfig();
+    $porMinuto = max(1, (int) ($config['limite_por_minuto'] ?? 8));
+    $porHora = max($porMinuto, (int) ($config['limite_por_hora'] ?? 40));
+    $ahora = time();
+
+    $llamadas = $_SESSION['ia_llamadas'] ?? [];
+    $llamadas = is_array($llamadas) ? array_values(array_filter(
+        $llamadas,
+        static fn($t) => is_numeric($t) && (int) $t > $ahora - 3600
+    )) : [];
+
+    $enMinuto = count(array_filter($llamadas, static fn($t) => (int) $t > $ahora - 60));
+    if ($enMinuto >= $porMinuto) {
+        $_SESSION['ia_llamadas'] = $llamadas;
+        return 'Llegaste al límite de ' . $porMinuto . ' preguntas por minuto. Esperá un momento e intentá de nuevo.';
+    }
+    if (count($llamadas) >= $porHora) {
+        $_SESSION['ia_llamadas'] = $llamadas;
+        return 'Llegaste al límite de ' . $porHora . ' preguntas por hora. Intentá más tarde.';
+    }
+
+    $llamadas[] = $ahora;
+    $_SESSION['ia_llamadas'] = $llamadas;
+    return null;
+}
+
+/** Caché en sesión para respuestas repetidas (solo ayuda y textos). */
+function iaCacheClave(string $modo, string $mensaje, array $historial): string
+{
+    return md5(iaModelo() . '|' . $modo . '|' . mb_substr($mensaje, 0, 300) . '|' . json_encode(array_slice($historial, -2)));
+}
+
+function iaCacheLeer(string $clave): ?string
+{
+    $cache = $_SESSION['ia_cache'] ?? [];
+    if (!is_array($cache) || !isset($cache[$clave])) {
+        return null;
+    }
+    $entrada = $cache[$clave];
+    if (!is_array($entrada) || ($entrada['hora'] ?? 0) < time() - 3600) {
+        unset($cache[$clave]);
+        $_SESSION['ia_cache'] = $cache;
+        return null;
+    }
+    return (string) ($entrada['texto'] ?? '');
+}
+
+function iaCacheGuardar(string $clave, string $texto): void
+{
+    $cache = $_SESSION['ia_cache'] ?? [];
+    if (!is_array($cache)) {
+        $cache = [];
+    }
+    $cache[$clave] = ['hora' => time(), 'texto' => $texto];
+    if (count($cache) > 40) {
+        $cache = array_slice($cache, -40, null, true);
+    }
+    $_SESSION['ia_cache'] = $cache;
+}
+
+/** Sugerencia de reposición basada en stock y ventas recientes (sin llamar a la IA). */
+function iaSugerenciaLocal(): array
+{
+    $productos = db()->query("
+        SELECT p.id, p.nombre, p.stock, p.stock_minimo,
+               COALESCE(SUM(CASE WHEN v.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                                 THEN d.cantidad ELSE 0 END), 0) AS vendidos
+        FROM productos p
+        LEFT JOIN venta_detalles d ON d.producto_id = p.id
+        LEFT JOIN ventas v ON v.id = d.venta_id
+        WHERE p.activo = 1 AND p.tipo = 'producto' AND p.stock <= p.stock_minimo
+        GROUP BY p.id
+        ORDER BY vendidos DESC, p.stock ASC
+        LIMIT 3
+    ")->fetchAll();
+
+    if ($productos === []) {
+        return [
+            'texto' => 'Todo en orden: ningún producto está por debajo de su stock mínimo.',
+            'productos' => [],
+        ];
+    }
+
+    $lineas = [];
+    foreach ($productos as $p) {
+        $vendidos = (int) $p['vendidos'];
+        $motivo = $vendidos > 0
+            ? 'se vendieron ' . $vendidos . ' unidades en 30 días'
+            : 'sin ventas recientes';
+        $lineas[] = [
+            'nombre' => (string) $p['nombre'],
+            'stock' => (int) $p['stock'],
+            'minimo' => (int) $p['stock_minimo'],
+            'vendidos' => $vendidos,
+            'motivo' => $motivo,
+        ];
+    }
+
+    $nombres = array_map(
+        static fn($p) => $p['nombre'] . ' (' . $p['stock'] . ' / mín. ' . $p['minimo'] . ')',
+        $lineas
+    );
+    return [
+        'texto' => 'Reponer primero: ' . implode(', ', $nombres) . '. Priorizá los que más se venden.',
+        'productos' => $lineas,
     ];
 }

@@ -1,8 +1,10 @@
 <?php
 require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/includes/ia.php';
 requerirLogin();
 
 $pdo = db();
+$sugerencia = iaSugerenciaLocal();
 
 $hoy = $pdo->query(
     'SELECT COUNT(*) AS n, COALESCE(SUM(total), 0) AS t FROM ventas WHERE DATE(created_at) = CURDATE()'
@@ -124,6 +126,24 @@ renderMensajes();
         <?php endif; ?>
     </section>
 </div>
+
+<section class="card ia-sugerencia-card">
+    <h2>✨ Sugerencia de reposición</h2>
+    <p class="ia-sugerencia-texto"><?= e($sugerencia['texto']) ?></p>
+    <?php if ($sugerencia['productos'] !== []): ?>
+        <ul class="ia-sugerencia-lista">
+            <?php foreach ($sugerencia['productos'] as $p): ?>
+                <li>
+                    <strong><?= e($p['nombre']) ?></strong>
+                    <span>Quedan <?= (int) $p['stock'] ?> · mínimo <?= (int) $p['minimo'] ?> · <?= e($p['motivo']) ?></span>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+    <div class="acciones">
+        <a class="btn secondary" href="ia.php">Pedile más detalles a la IA</a>
+    </div>
+</section>
 
 <section class="card">
     <h2>Accesos rápidos</h2>

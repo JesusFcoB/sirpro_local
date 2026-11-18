@@ -24,4 +24,8 @@ return [
 
     // Si es false, el modo "Analizar negocio" no envía cifras de ventas/inventario.
     'incluir_datos' => true,
+
+    // Límites por usuario y sesión (protegen tu clave de Gemini).
+    'limite_por_minuto' => 8,
+    'limite_por_hora'   => 40,
 ];

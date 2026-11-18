@@ -38,6 +38,62 @@ if (!is_array($datos) || !csrfValido($datos['csrf'] ?? null)) {
     exit;
 }
 
+$accion = (string) ($datos['accion'] ?? 'chat');
+
+/** Sugerencia de reposición para el tablero (barata, sin modelo). */
+if ($accion === 'sugerencia') {
+    $sugerencia = iaSugerenciaLocal();
+    echo json_encode([
+        'respuesta'  => $sugerencia['texto'],
+        'productos'  => $sugerencia['productos'],
+        'proveedor'  => 'local',
+        'modo'       => 'sugerencia',
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/** Redactar descripción de producto desde el formulario de Productos. */
+if ($accion === 'descripcion') {
+    $nombreProducto = mb_substr(trim((string) ($datos['nombre'] ?? '')), 0, 150);
+    $categoriaProducto = mb_substr(trim((string) ($datos['categoria'] ?? '')), 0, 80);
+    $precioProducto = (string) ($datos['precio'] ?? '');
+    $tipoProducto = ($datos['tipo'] ?? '') === 'servicio' ? 'servicio' : 'producto';
+
+    if ($nombreProducto === '') {
+        http_response_code(422);
+        echo json_encode(['error' => 'Escribí el nombre del producto antes de generar la descripción.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $limiteDescripcion = iaVerificarLimite();
+    if ($limiteDescripcion !== null) {
+        http_response_code(429);
+        echo json_encode(['error' => $limiteDescripcion], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $mensajeProducto = 'Redactá una descripción breve y atractiva (máximo 300 caracteres, una sola línea, sin comillas, sin markdown) '
+        . 'para ' . $tipoProducto . ' llamado "' . $nombreProducto . '"'
+        . ($categoriaProducto !== '' ? ' de la categoría ' . $categoriaProducto : '')
+        . 'IGNORÁ el catálogo del contexto para esta tarea: usá exclusivamente el nombre, tipo y categoría indicados. '
+        . 'No agregues especificaciones técnicas que no aparezcan en el nombre. '
+        . ($precioProducto !== '' ? 'Si mencionás el precio, usá exactamente ' . $precioProducto : 'No menciones precios.')
+        . '. Respondé solo la descripción.';
+
+    try {
+        $descripcion = iaLlamarIA($mensajeProducto, 'textos', []);
+        echo json_encode([
+            'descripcion' => mb_substr(str_replace(["\r", "\n"], ' ', $descripcion), 0, 500),
+            'proveedor'   => iaProveedor(),
+            'modelo'      => iaModelo(),
+        ], JSON_UNESCAPED_UNICODE);
+    } catch (Throwable $e) {
+        http_response_code(503);
+        echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
+}
+
 $mensaje = trim((string) ($datos['mensaje'] ?? ''));
 $modo = (string) ($datos['modo'] ?? 'analisis');
 
@@ -78,8 +134,66 @@ foreach (($datos['historial'] ?? []) as $item) {
     }
 }
 
+$limite = iaVerificarLimite();
+if ($limite !== null) {
+    http_response_code(429);
+    echo json_encode(['error' => $limite], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+$usarStream = !empty($datos['stream']);
+$claveCache = ($modo !== 'analisis')
+    ? iaCacheClave($modo, $mensaje, $historial)
+    : '';
+$enCache = $claveCache !== '' ? iaCacheLeer($claveCache) : null;
+
+if ($usarStream) {
+    header('Content-Type: text/event-stream; charset=utf-8');
+    header('Cache-Control: no-cache');
+    header('X-Accel-Buffering: no');
+    $enviar = static function (array $evento): void {
+        echo 'data: ' . json_encode($evento, JSON_UNESCAPED_UNICODE) . "\n\n";
+        if (ob_get_level() > 0) {
+            ob_flush();
+        }
+        flush();
+    };
+    if ($enCache !== null) {
+        $enviar(['tipo' => 'delta', 'texto' => $enCache]);
+        $enviar(['tipo' => 'fin', 'respuesta' => $enCache, 'cache' => true, 'modelo' => iaModelo()]);
+        exit;
+    }
+    try {
+        $texto = iaLlamarIAStream(
+            $mensaje,
+            $modo,
+            $historial,
+            static function (string $delta) use ($enviar): void {
+                $enviar(['tipo' => 'delta', 'texto' => $delta]);
+            },
+            static function () use ($enviar): void {
+                $enviar(['tipo' => 'reset']);
+            }
+        );
+        if ($claveCache !== '') {
+            iaCacheGuardar($claveCache, $texto);
+        }
+        $enviar(['tipo' => 'fin', 'respuesta' => $texto, 'modelo' => iaModelo()]);
+    } catch (Throwable $e) {
+        $enviar(['tipo' => 'error', 'error' => $e->getMessage()]);
+    }
+    exit;
+}
+
 try {
-    $respuesta = iaLlamarIA($mensaje, $modo, $historial);
+    if ($enCache !== null) {
+        $respuesta = $enCache;
+    } else {
+        $respuesta = iaLlamarIA($mensaje, $modo, $historial);
+        if ($claveCache !== '') {
+            iaCacheGuardar($claveCache, $respuesta);
+        }
+    }
     echo json_encode([
         'respuesta' => $respuesta,
         'proveedor' => iaProveedor(),

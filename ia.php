@@ -47,7 +47,10 @@ render('Asistente IA', '');
             </div>
             <form id="ia-form" class="ia-form">
                 <textarea id="ia-input" rows="2" maxlength="800" placeholder="Escribí tu pregunta…" aria-label="Mensaje para el asistente"></textarea>
-                <button id="ia-enviar" class="btn primary" type="submit">Enviar</button>
+                <div class="ia-acciones-envio">
+                    <button id="ia-enviar" class="btn primary" type="submit">Enviar</button>
+                    <button id="ia-cancelar" class="btn secondary" type="button" hidden>Detener</button>
+                </div>
             </form>
             <p class="ia-ayuda">Enter para enviar · Mayús + Enter para salto de línea</p>
         </section>
@@ -94,6 +97,7 @@ render('Asistente IA', '');
     var input = document.getElementById('ia-input');
     var form = document.getElementById('ia-form');
     var enviarBtn = document.getElementById('ia-enviar');
+    var cancelarBtn = document.getElementById('ia-cancelar');
     var chips = document.getElementById('ia-chips');
     var limpiarBtn = document.getElementById('ia-limpiar');
     var botonesModo = Array.prototype.slice.call(document.querySelectorAll('.ia-modo'));
@@ -101,6 +105,8 @@ render('Asistente IA', '');
     var modo = puedeAnalizar ? 'analisis' : 'ayuda';
     var historial = [];
     var ocupado = false;
+    var controlador = null;
+    var fueCancelado = false;
 
     function escapar(texto) {
         return String(texto)
@@ -149,6 +155,7 @@ render('Asistente IA', '');
     }
 
     function seleccionarModo(nuevo) {
+        cancelar();
         modo = nuevo;
         historial = [];
         botonesModo.forEach(function (b) {
@@ -185,49 +192,140 @@ render('Asistente IA', '');
         }
     }
 
-    async function enviar(evento) {
-        evento.preventDefault();
-        if (ocupado) return;
-        var mensaje = input.value.trim();
-        if (!mensaje) return;
+    function agregarAcciones(burbuja, texto, mensaje) {
+        var contenedor = burbuja.parentNode;
+        var barra = document.createElement('div');
+        barra.className = 'ia-acciones';
 
+        var copiar = document.createElement('button');
+        copiar.type = 'button';
+        copiar.className = 'btn link mini';
+        copiar.textContent = '📋 Copiar';
+        copiar.addEventListener('click', function () {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(texto).then(function () {
+                    copiar.textContent = '✓ Copiado';
+                    setTimeout(function () { copiar.textContent = '📋 Copiar'; }, 1500);
+                });
+            }
+        });
+
+        var regenerar = document.createElement('button');
+        regenerar.type = 'button';
+        regenerar.className = 'btn link mini';
+        regenerar.textContent = '🔄 Regenerar';
+        regenerar.addEventListener('click', function () {
+            if (ocupado || !mensaje) return;
+            var ultimo = historial[historial.length - 1];
+            if (ultimo && ultimo.rol === 'asistente') historial.pop();
+            var anteultimo = historial[historial.length - 1];
+            if (anteultimo && anteultimo.rol === 'usuario') historial.pop();
+            enviarMensaje(mensaje);
+        });
+
+        barra.appendChild(copiar);
+        barra.appendChild(regenerar);
+        contenedor.appendChild(barra);
+    }
+
+    function terminar() {
+        ocupado = false;
+        controlador = null;
+        enviarBtn.disabled = false;
+        enviarBtn.textContent = 'Enviar';
+        cancelarBtn.hidden = true;
+        input.focus();
+    }
+
+    function cancelar() {
+        if (!ocupado || !controlador) return;
+        fueCancelado = true;
+        controlador.abort();
+    }
+
+    async function enviarMensaje(mensaje) {
+        if (ocupado || !mensaje) return;
         ocupado = true;
+        fueCancelado = false;
+        controlador = new AbortController();
         enviarBtn.disabled = true;
         enviarBtn.textContent = 'Pensando…';
+        cancelarBtn.hidden = false;
         input.value = '';
         agregarMensaje('usuario', mensaje);
         var burbuja = agregarMensaje('asistente', 'Pensando…');
         burbuja.classList.add('ia-typing');
+        var texto = '';
 
         try {
             var r = await fetch('api/ia.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                signal: controlador.signal,
                 body: JSON.stringify({
                     csrf: IA_CSRF,
                     mensaje: mensaje,
                     modo: modo,
-                    historial: historial
+                    historial: historial,
+                    stream: true
                 })
             });
-            var datos = await r.json();
-            if (!r.ok || datos.error) {
-                throw new Error(datos.error || 'No se pudo obtener una respuesta.');
+
+            if (!r.ok) {
+                var datosError = await r.json().catch(function () { return {}; });
+                throw new Error(datosError.error || 'No se pudo obtener una respuesta.');
             }
+
+            var lector = r.body.getReader();
+            var decodificador = new TextDecoder('utf-8');
+            var pendiente = '';
+            while (true) {
+                var parte = await lector.read();
+                if (parte.done) break;
+                pendiente += decodificador.decode(parte.value, { stream: true });
+                var bloques = pendiente.split('\n\n');
+                pendiente = bloques.pop();
+                for (var i = 0; i < bloques.length; i++) {
+                    var linea = bloques[i].trim();
+                    if (!linea || linea.indexOf('data:') !== 0) continue;
+                    var evento;
+                    try { evento = JSON.parse(linea.slice(5).trim()); } catch (e) { continue; }
+                    if (evento.tipo === 'delta') {
+                        texto += evento.texto || '';
+                        burbuja.classList.remove('ia-typing');
+                        burbuja.innerHTML = formatear(texto);
+                        chat.scrollTop = chat.scrollHeight;
+                    } else if (evento.tipo === 'reset') {
+                        texto = '';
+                        burbuja.innerHTML = '';
+                    } else if (evento.tipo === 'error') {
+                        throw new Error(evento.error || 'Error al consultar el asistente.');
+                    } else if (evento.tipo === 'fin') {
+                        texto = evento.respuesta || texto;
+                        burbuja.innerHTML = formatear(texto);
+                    }
+                }
+            }
+
+            if (fueCancelado && texto === '') texto = 'Generación detenida.';
             burbuja.classList.remove('ia-typing');
-            burbuja.innerHTML = formatear(datos.respuesta);
+            burbuja.innerHTML = formatear(texto || 'El asistente no devolvió texto.');
             historial.push({ rol: 'usuario', contenido: mensaje });
-            historial.push({ rol: 'asistente', contenido: datos.respuesta });
+            historial.push({ rol: 'asistente', contenido: texto });
             if (historial.length > 8) historial = historial.slice(-8);
+            agregarAcciones(burbuja, texto, mensaje);
         } catch (e) {
             burbuja.classList.remove('ia-typing');
-            burbuja.innerHTML = '<span class="ia-error">' + escapar(e.message || 'Error al consultar el asistente.') + '</span>';
+            var mensajeError = (e && e.name === 'AbortError') ? 'Generación detenida.' : (e.message || 'Error al consultar el asistente.');
+            burbuja.innerHTML = '<span class="ia-error">' + escapar(mensajeError) + '</span>';
         } finally {
-            ocupado = false;
-            enviarBtn.disabled = false;
-            enviarBtn.textContent = 'Enviar';
-            input.focus();
+            terminar();
         }
+    }
+
+    function enviar(evento) {
+        evento.preventDefault();
+        enviarMensaje(input.value.trim());
     }
 
     botonesModo.forEach(function (b) {
@@ -235,6 +333,7 @@ render('Asistente IA', '');
     });
 
     form.addEventListener('submit', enviar);
+    cancelarBtn.addEventListener('click', cancelar);
     input.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -243,6 +342,7 @@ render('Asistente IA', '');
     });
 
     limpiarBtn.addEventListener('click', function () {
+        cancelar();
         historial = [];
         Array.prototype.slice.call(chat.querySelectorAll('.ia-msj:not(:first-child)')).forEach(function (n) { n.remove(); });
         bienvenidaEl.innerHTML = formatear(bienvenidas[modo]);

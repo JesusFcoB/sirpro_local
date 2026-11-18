@@ -16,7 +16,9 @@ Sistema de punto de venta local para Sirpro. Incluye:
 - **Operaciones más seguras**: token CSRF en todos los formularios, validación estricta de ids/fechas/montos, comprobación de categorías, límites de subida de imágenes, confirmación antes de cobrar y redirección después de guardar para evitar duplicar acciones con F5.
 - **Fotos de productos** con compresión automática: al subir una imagen se reduce a máximo 800 px y se convierte a WebP (puede pasar de 3 MB a ~50 KB sin perder calidad visible).
 - **Categorías** tomadas del documento de requerimientos: Laptops, Computadoras de Escritorio, Impresoras, Discos SSD, Periféricos, Memorias USB y Servicios (mantenimiento de impresoras, cambio de pantalla, instalación de Office, etc.).
-- **Asistente IA** con Gemini: chat disponible para todos los usuarios con tres modos (analizar negocio, ayuda del sistema y redactar textos). Se configura una sola vez en el servidor; no requiere instalar nada en las PC.
+- **Asistente IA** con Gemini: chat disponible para todos los usuarios con tres modos (analizar negocio, ayuda del sistema y redactar textos). Incluye respuestas en streaming con botón **Detener**, copiar/regenerar, caché de respuestas frecuentes y límite de uso por usuario. Se configura una sola vez en el servidor; no requiere instalar nada en las PC.
+- **Sugerencia de reposición** en el tablero: prioriza productos con stock bajo usando también las ventas de los últimos 30 días, con un botón para pedirle más detalles a la IA.
+- **Generar descripción con IA** en el formulario de Productos: redacta una descripción a partir del nombre, categoría y precio.
 
 ## Requisitos
 
@@ -71,6 +73,7 @@ Si tu MySQL tiene usuario o contraseña distintos a `root` sin contraseña, edit
    - `modelos_alternativos`: si el principal está saturado o da timeout, se prueba automáticamente con estos modelos (por defecto `gemini-3.8-flash`).
    - `timeout`: segundos máximos de espera por respuesta y por modelo.
    - `incluir_datos`: si es `false`, el modo **Analizar negocio** no envía cifras de ventas ni inventario a internet.
+   - `limite_por_minuto` y `limite_por_hora`: máximo de preguntas por usuario (por defecto 8 y 40). Protegen tu clave de Gemini contra uso accidental o spam.
 
 La clave queda en el servidor y nunca se envía al navegador. `includes/config_ia.php` está en `.gitignore` para que no se suba al repositorio. Si no hay clave o no hay internet, el resto de Sirpro sigue funcionando y el asistente muestra un aviso.
 

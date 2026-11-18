@@ -440,7 +440,20 @@ body.dark .ia-error { color: #fca5a5; }
 .ia-form .btn { flex: 0 0 auto; }
 .ia-ayuda { color: var(--text-sec); font-size: .74rem; margin: 2px 18px 14px; }
 
+.ia-acciones-envio { display: flex; gap: 8px; flex: 0 0 auto; }
+.ia-acciones { display: flex; gap: 10px; padding: 2px 4px 0; }
+.ia-acciones .btn { padding: 2px 4px; font-size: .74rem; }
+.ia-sugerencia-card { border-left: 4px solid var(--azul); }
+.ia-sugerencia-texto { font-weight: 600; margin: 0 0 10px; }
+.ia-sugerencia-lista { margin: 0 0 12px; padding-left: 18px; }
+.ia-sugerencia-lista li { margin-bottom: 6px; font-size: .88rem; }
+.ia-sugerencia-lista span { display: block; color: var(--text-sec); font-size: .78rem; }
+.ia-desc-fila { display: flex; gap: 8px; align-items: center; }
+.ia-desc-fila input { flex: 1; }
+.ia-desc-estado { display: block; min-height: 16px; margin-top: 4px; color: var(--text-sec); font-size: .76rem; }
+
 @media (max-width: 900px) {
     .ia-layout { grid-template-columns: 1fr; }
     .ia-chat { height: 50vh; }
+    .ia-desc-fila { flex-direction: column; align-items: stretch; }
 }
