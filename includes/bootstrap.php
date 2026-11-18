@@ -218,6 +218,18 @@ function toggleDark(){
   localStorage.setItem('sirpro-dark', document.body.classList.contains('dark') ? '1' : '0');
   var b=document.getElementById('dark-btn'); if(b) b.textContent=document.body.classList.contains('dark')?'☀️':'🌙';
 }
+function actualizarReloj(){
+  var el = document.getElementById('reloj');
+  if (!el) return;
+  var ahora = new Date();
+  var fecha = new Intl.DateTimeFormat('es-419', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(ahora);
+  fecha = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+  var hora = new Intl.DateTimeFormat('es-419', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(ahora);
+  var f = el.querySelector('.reloj-fecha');
+  var h = el.querySelector('.reloj-hora');
+  if (f) f.textContent = fecha;
+  if (h) h.textContent = hora;
+}
 </script>
 </head>
 <body>
@@ -228,6 +240,8 @@ document.addEventListener('DOMContentLoaded', function(){
     var b = document.getElementById('dark-btn');
     if (b) b.textContent = '☀️';
   }
+  actualizarReloj();
+  setInterval(actualizarReloj, 1000);
 });
 </script>
 <header class="topbar">
@@ -235,7 +249,13 @@ document.addEventListener('DOMContentLoaded', function(){
     <nav>
         {$links}
     </nav>
-    <div class="user"><button class="btn ghost mini" id="dark-btn" type="button" onclick="toggleDark()" title="Cambiar modo oscuro">🌙</button> {$nombre} <a class="btn ghost mini" href="logout.php">Salir</a></div>
+    <div class="user">
+        <div class="reloj" id="reloj" aria-label="Fecha y hora actual">
+            <span class="reloj-fecha">—</span>
+            <span class="reloj-hora">--:--:--</span>
+        </div>
+        <button class="btn ghost mini" id="dark-btn" type="button" onclick="toggleDark()" title="Cambiar modo oscuro">🌙</button> {$nombre} <a class="btn ghost mini" href="logout.php">Salir</a>
+    </div>
 </header>
 <main>
 HTML;
