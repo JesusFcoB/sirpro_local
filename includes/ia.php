@@ -555,6 +555,38 @@ function iaCacheGuardar(string $clave, string $texto): void
     $_SESSION['ia_cache'] = $cache;
 }
 
+/** Normaliza una descripción generada: corrige formato y la deja dentro del máximo. */
+function iaLimpiarDescripcion(string $texto, int $max = 500): string
+{
+    $max = max(20, $max);
+    $texto = str_replace(["\r", "\n", "\t"], ' ', strip_tags($texto));
+    $texto = (string) preg_replace('/[`*_#]/u', '', $texto);
+    $texto = (string) preg_replace('/^\s*["“‘\']+|["”’\']+\s*$/u', '', $texto);
+    $texto = (string) preg_replace('/\s+/u', ' ', $texto);
+    $texto = (string) preg_replace('/\s+([.,;:!?])/u', '$1', $texto);
+    $texto = trim($texto);
+
+    if ($texto === '') {
+        return '';
+    }
+
+    $texto = mb_strtoupper(mb_substr($texto, 0, 1)) . mb_substr($texto, 1);
+    if (!preg_match('/[.!?]$/u', $texto)) {
+        $texto .= '.';
+    }
+
+    if (mb_strlen($texto) > $max) {
+        $corte = mb_substr($texto, 0, $max - 1);
+        $espacio = mb_strrpos($corte, ' ');
+        if ($espacio !== false && $espacio > (int) ($max * 0.6)) {
+            $corte = mb_substr($corte, 0, $espacio);
+        }
+        $texto = rtrim($corte, ' ,;:') . '…';
+    }
+
+    return $texto;
+}
+
 /** Sugerencia de reposición basada en stock y ventas recientes (sin llamar a la IA). */
 function iaSugerenciaLocal(): array
 {

@@ -79,6 +79,8 @@ La clave queda en el servidor y nunca se envía al navegador. `includes/config_i
 
 El modo **Analizar negocio** es solo para administradores. **Ayuda del sistema** y **Redactar textos** están disponibles para todos los usuarios.
 
+En **Productos**, el botón **✨ Generar con IA** redacta la descripción y la ajusta automáticamente: corrige espacios y formato, agrega mayúscula inicial y punto final, y la recorta sin cortar palabras para que no supere los 500 caracteres del campo. Siempre conviene revisarla antes de guardar.
+
 ## Logo
 
 - `assets/logo.svg` — logo vectorial incluido (se ve nítido en pantalla e impresión).

@@ -330,7 +330,7 @@ render('Productos', '');
             var datos = await r.json();
             if (!r.ok || datos.error) throw new Error(datos.error || 'No se pudo generar la descripción.');
             campo('descripcion').value = datos.descripcion;
-            estado.textContent = 'Descripción generada. Revisala antes de guardar.';
+            estado.textContent = 'Descripción generada, corregida y ajustada. Revisala antes de guardar.';
         } catch (e) {
             estado.textContent = e.message || 'No se pudo generar la descripción.';
         } finally {

@@ -72,18 +72,18 @@ if ($accion === 'descripcion') {
         exit;
     }
 
-    $mensajeProducto = 'Redactá una descripción breve y atractiva (máximo 300 caracteres, una sola línea, sin comillas, sin markdown) '
-        . 'para ' . $tipoProducto . ' llamado "' . $nombreProducto . '"'
+    $mensajeProducto = 'Redactá una descripción breve, atractiva y gramaticalmente correcta para ' . $tipoProducto
+        . ' llamado "' . $nombreProducto . '"'
         . ($categoriaProducto !== '' ? ' de la categoría ' . $categoriaProducto : '')
-        . 'IGNORÁ el catálogo del contexto para esta tarea: usá exclusivamente el nombre, tipo y categoría indicados. '
-        . 'No agregues especificaciones técnicas que no aparezcan en el nombre. '
+        . '. Corregí la ortografía y las tildes. Usá exclusivamente el nombre, tipo y categoría indicados: '
+        . 'ignorá el catálogo del contexto y no agregues especificaciones técnicas que no aparezcan en el nombre. '
         . ($precioProducto !== '' ? 'Si mencionás el precio, usá exactamente ' . $precioProducto : 'No menciones precios.')
-        . '. Respondé solo la descripción.';
+        . ' Máximo 300 caracteres, una sola línea, sin comillas, sin markdown y terminá con punto. Respondé solo la descripción.';
 
     try {
         $descripcion = iaLlamarIA($mensajeProducto, 'textos', []);
         echo json_encode([
-            'descripcion' => mb_substr(str_replace(["\r", "\n"], ' ', $descripcion), 0, 500),
+            'descripcion' => iaLimpiarDescripcion($descripcion, 500),
             'proveedor'   => iaProveedor(),
             'modelo'      => iaModelo(),
         ], JSON_UNESCAPED_UNICODE);

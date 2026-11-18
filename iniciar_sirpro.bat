@@ -19,7 +19,7 @@ set "MYSQL_INICIADO=0"
 
 if not exist "%XAMPP%\php\php.exe" set "XAMPP=D:\xampp"
 if not exist "%XAMPP%\php\php.exe" (
-    echo No se encontro XAMPP en C:\xampp ni D:\xampp.
+    echo No se encontr¢ XAMPP en C:\xampp ni D:\xampp.
     echo Edita la variable XAMPP dentro de este archivo y vuelve a intentarlo.
     pause
     exit /b 1
@@ -68,7 +68,7 @@ if not errorlevel 1 goto db_lista
 echo Creando la base de datos sirpro ^(solo la primera vez^)...
 "%MYSQLBIN%\mysql.exe" -u root --default-character-set=utf8mb4 < "%BASE%database.sql"
 if errorlevel 1 (
-    echo Ocurrio un problema al importar database.sql
+    echo Ocurri¢ un problema al importar database.sql
     pause
     exit /b 1
 )
@@ -97,9 +97,9 @@ start "" http://127.0.0.1:%PUERTO%/login.php
 :sin_navegador
 echo.
 echo ------------------------------------------
-echo  Sirpro esta corriendo en:
+echo  Sirpro est  corriendo en:
 echo      http://127.0.0.1:%PUERTO%
-echo  Usuario: admin     Contrasena: admin123
+echo  Usuario: admin     Contrase¤a: admin123
 echo ------------------------------------------
 echo.
 echo  NO cierres esta ventana con la X.
