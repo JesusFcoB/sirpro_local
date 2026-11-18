@@ -32,6 +32,7 @@ CREATE TABLE productos (
     precio DECIMAL(10,2) NOT NULL DEFAULT 0,
     precio_oferta DECIMAL(10,2) NULL,
     stock INT NOT NULL DEFAULT 0,
+    stock_minimo INT NOT NULL DEFAULT 5,
     activo TINYINT(1) NOT NULL DEFAULT 1,
     FOREIGN KEY (categoria_id) REFERENCES categorias(id)
 );

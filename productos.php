@@ -13,77 +13,131 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Sesión no válida. Recarga la página.';
     } else {
         $accion = $_POST['accion'] ?? '';
-        $id = (int) ($_POST['id'] ?? 0);
+        $id = idValido($_POST['id'] ?? 0);
 
         if ($accion === 'guardar') {
-            $sku = strtoupper(trim($_POST['sku'] ?? ''));
-            $nombre = trim($_POST['nombre'] ?? '');
-            $categoria = (int) ($_POST['categoria_id'] ?? 0);
-            $tipo = ($_POST['tipo'] ?? '') === 'servicio' ? 'servicio' : 'producto';
-            $descripcion = trim($_POST['descripcion'] ?? '');
-            $precio = (float) ($_POST['precio'] ?? 0);
-            $oferta = trim($_POST['precio_oferta'] ?? '') === '' ? null : (float) $_POST['precio_oferta'];
-            $stock = max(0, (int) ($_POST['stock'] ?? 0));
+            $sku = strtoupper(textoValido($_POST['sku'] ?? '', 50));
+            $nombre = textoValido($_POST['nombre'] ?? '', 150);
+            $categoria = idValido($_POST['categoria_id'] ?? 0);
+            $tipo = (($_POST['tipo'] ?? '') === 'servicio') ? 'servicio' : 'producto';
+            $descripcion = textoValido($_POST['descripcion'] ?? '', 500);
+            $precio = numeroValido($_POST['precio'] ?? null, 0, 100000000);
+            $ofertaTexto = trim((string) ($_POST['precio_oferta'] ?? ''));
+            $oferta = $ofertaTexto === '' ? null : numeroValido($ofertaTexto, 0, 100000000);
+            $stock = numeroValido($_POST['stock'] ?? 0, 0, 1000000);
+            $minimo = numeroValido($_POST['stock_minimo'] ?? 5, 0, 1000000);
 
-            // imagen: solo se reemplaza si el usuario sube un archivo nuevo
+            if ($precio === null || $stock === null || $minimo === null || ($ofertaTexto !== '' && $oferta === null)) {
+                $error = 'Revisa los valores numéricos: precio, stock y mínimo deben ser válidos.';
+            } elseif ($sku === '' || $nombre === '' || $categoria <= 0) {
+                $error = 'Completa SKU, nombre y categoría.';
+            } elseif ($oferta !== null && $oferta > $precio) {
+                $error = 'El precio de oferta no puede ser mayor al precio normal.';
+            } else {
+                $stmt = $pdo->prepare('SELECT COUNT(*) FROM categorias WHERE id = ?');
+                $stmt->execute([$categoria]);
+                if ((int) $stmt->fetchColumn() === 0) {
+                    $error = 'La categoría seleccionada ya no existe. Recarga la página.';
+                }
+            }
+
             $imagen = null;
-            $huboSubida = isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK;
-            if ($huboSubida) {
-                $imagen = comprimirImagen($_FILES['imagen']['tmp_name'], $DIR_IMAGENES);
-                if ($imagen === null) {
-                    $error = 'El archivo de imagen no es valido. Usa JPG, PNG, GIF o WebP.';
+            $huboSubida = isset($_FILES['imagen'])
+                && is_array($_FILES['imagen'])
+                && (int) ($_FILES['imagen']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK;
+
+            if (!$error && $huboSubida) {
+                if ((int) ($_FILES['imagen']['size'] ?? 0) > 5 * 1024 * 1024) {
+                    $error = 'La imagen debe pesar menos de 5 MB.';
+                } else {
+                    $imagen = comprimirImagen($_FILES['imagen']['tmp_name'], $DIR_IMAGENES);
+                    if ($imagen === null) {
+                        $error = 'El archivo de imagen no es válido. Usa JPG, PNG, GIF o WebP.';
+                    }
                 }
             }
 
             if (!$error) {
-                if ($sku === '' || $nombre === '' || $categoria <= 0 || $precio < 0) {
-                    $error = 'Completa SKU, nombre, categoría y un precio válido.';
-                } elseif ($oferta !== null && $oferta > $precio) {
-                    $error = 'El precio de oferta no puede ser mayor al precio normal.';
-                } else {
-                    try {
+                try {
+                    $anterior = null;
+                    if ($id > 0) {
+                        $stmt = $pdo->prepare('SELECT imagen FROM productos WHERE id = ?');
+                        $stmt->execute([$id]);
+                        $anterior = $stmt->fetch() ?: null;
+                        if ($anterior === null) {
+                            $error = 'El producto ya no existe.';
+                        }
+                    }
+
+                    if (!$error) {
                         if ($id > 0) {
-                            $anterior = $pdo->query('SELECT imagen FROM productos WHERE id = ' . $id)->fetch();
                             if ($huboSubida) {
                                 $stmt = $pdo->prepare(
-                                    'UPDATE productos SET sku=?, nombre=?, categoria_id=?, tipo=?, descripcion=?, imagen=?, precio=?, precio_oferta=?, stock=? WHERE id=?'
+                                    'UPDATE productos SET sku=?, nombre=?, categoria_id=?, tipo=?, descripcion=?,
+                                     imagen=?, precio=?, precio_oferta=?, stock=?, stock_minimo=? WHERE id=?'
                                 );
-                                $stmt->execute([$sku, $nombre, $categoria, $tipo, $descripcion, $imagen, $precio, $oferta, $stock, $id]);
+                                $stmt->execute([$sku, $nombre, $categoria, $tipo, $descripcion, $imagen,
+                                    $precio, $oferta, (int) $stock, (int) $minimo, $id]);
                                 if ($anterior) {
                                     borrarImagen($anterior['imagen'], $DIR_IMAGENES);
                                 }
                             } else {
                                 $stmt = $pdo->prepare(
-                                    'UPDATE productos SET sku=?, nombre=?, categoria_id=?, tipo=?, descripcion=?, precio=?, precio_oferta=?, stock=? WHERE id=?'
+                                    'UPDATE productos SET sku=?, nombre=?, categoria_id=?, tipo=?, descripcion=?,
+                                     precio=?, precio_oferta=?, stock=?, stock_minimo=? WHERE id=?'
                                 );
-                                $stmt->execute([$sku, $nombre, $categoria, $tipo, $descripcion, $precio, $oferta, $stock, $id]);
+                                $stmt->execute([$sku, $nombre, $categoria, $tipo, $descripcion,
+                                    $precio, $oferta, (int) $stock, (int) $minimo, $id]);
                             }
                             $mensaje = 'Producto actualizado.';
                         } else {
                             $stmt = $pdo->prepare(
-                                'INSERT INTO productos (sku, nombre, categoria_id, tipo, descripcion, imagen, precio, precio_oferta, stock)
-                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                                'INSERT INTO productos (sku, nombre, categoria_id, tipo, descripcion, imagen,
+                                 precio, precio_oferta, stock, stock_minimo)
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
                             );
-                            $stmt->execute([$sku, $nombre, $categoria, $tipo, $descripcion, $imagen, $precio, $oferta, $stock]);
+                            $stmt->execute([$sku, $nombre, $categoria, $tipo, $descripcion, $imagen,
+                                $precio, $oferta, (int) $stock, (int) $minimo]);
+                            $id = (int) $pdo->lastInsertId();
                             $mensaje = 'Producto creado.';
                         }
-                    } catch (PDOException $ex) {
-                        $error = 'Ya existe un producto con ese SKU.';
+                        flash($mensaje);
+                        irA('productos.php' . ($id > 0 ? '?editar=' . $id : ''));
                     }
+                } catch (PDOException $ex) {
+                    $error = 'No se pudo guardar. Revisa que el SKU no esté repetido.';
                 }
             }
         } elseif ($accion === 'stock' && $id > 0) {
-            $ajuste = (int) ($_POST['ajuste'] ?? 0);
-            $stmt = $pdo->prepare('UPDATE productos SET stock = GREATEST(0, stock + ?) WHERE id = ?');
-            $stmt->execute([$ajuste, $id]);
-            $mensaje = 'Stock actualizado.';
-        } elseif ($accion === 'desactivar' && $id > 0) {
-            $fila = $pdo->query('SELECT imagen FROM productos WHERE id = ' . $id)->fetch();
-            $pdo->prepare('UPDATE productos SET activo = 0 WHERE id = ?')->execute([$id]);
-            if ($fila) {
-                borrarImagen($fila['imagen'], $DIR_IMAGENES);
+            $ajuste = filter_var((string) ($_POST['ajuste'] ?? ''), FILTER_VALIDATE_INT);
+            if (!in_array($ajuste, [-1, 1], true)) {
+                $error = 'Ajuste de stock no válido.';
+            } else {
+                $stmt = $pdo->prepare('SELECT id FROM productos WHERE id = ? AND activo = 1');
+                $stmt->execute([$id]);
+                if ($stmt->fetchColumn() === false) {
+                    $error = 'El producto ya no existe.';
+                } else {
+                    $pdo->prepare('UPDATE productos SET stock = GREATEST(0, stock + ?) WHERE id = ?')
+                        ->execute([$ajuste, $id]);
+                    flash('Stock actualizado.');
+                    irA('productos.php');
+                }
             }
-            $mensaje = 'Producto desactivado.';
+        } elseif ($accion === 'desactivar' && $id > 0) {
+            $stmt = $pdo->prepare('SELECT imagen FROM productos WHERE id = ? AND activo = 1');
+            $stmt->execute([$id]);
+            $fila = $stmt->fetch() ?: null;
+            if ($fila === null) {
+                $error = 'El producto ya no existe.';
+            } else {
+                $pdo->prepare('UPDATE productos SET activo = 0 WHERE id = ?')->execute([$id]);
+                borrarImagen($fila['imagen'], $DIR_IMAGENES);
+                flash('Producto desactivado.');
+                irA('productos.php');
+            }
+        } else {
+            $error = 'Acción no reconocida.';
         }
     }
 }
@@ -91,13 +145,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $editando = null;
 if (isset($_GET['editar'])) {
     $stmt = $pdo->prepare('SELECT * FROM productos WHERE id = ?');
-    $stmt->execute([(int) $_GET['editar']]);
+    $stmt->execute([idValido($_GET['editar'])]);
     $editando = $stmt->fetch() ?: null;
 }
 
 $categorias = $pdo->query('SELECT * FROM categorias ORDER BY nombre')->fetchAll();
-$filtroCat = (int) ($_GET['categoria'] ?? 0);
-$sql = 'SELECT p.*, c.nombre AS categoria FROM productos p JOIN categorias c ON c.id = p.categoria_id WHERE p.activo = 1';
+$filtroCat = idValido($_GET['categoria'] ?? 0);
+$sql = 'SELECT p.*, c.nombre AS categoria FROM productos p
+        JOIN categorias c ON c.id = p.categoria_id WHERE p.activo = 1';
 $params = [];
 if ($filtroCat > 0) {
     $sql .= ' AND p.categoria_id = ?';
@@ -108,7 +163,16 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $productos = $stmt->fetchAll();
 
-$f = $editando ?? ['id' => 0, 'sku' => '', 'nombre' => '', 'categoria_id' => '', 'tipo' => 'producto', 'descripcion' => '', 'imagen' => '', 'precio' => '', 'precio_oferta' => '', 'stock' => 0];
+$resumenStock = $pdo->query(
+    "SELECT SUM(stock <= 0) AS agotados, SUM(stock > 0 AND stock <= stock_minimo) AS bajos
+     FROM productos WHERE activo = 1 AND tipo = 'producto'"
+)->fetch();
+
+$f = $editando ?? [
+    'id' => 0, 'sku' => '', 'nombre' => '', 'categoria_id' => '', 'tipo' => 'producto',
+    'descripcion' => '', 'imagen' => '', 'precio' => '', 'precio_oferta' => '',
+    'stock' => 0, 'stock_minimo' => 5,
+];
 
 render('Productos', '');
 ?>
@@ -116,15 +180,23 @@ render('Productos', '');
 
 <?php if ($mensaje): ?><p class="alert ok"><?= e($mensaje) ?></p><?php endif; ?>
 <?php if ($error): ?><p class="alert error"><?= e($error) ?></p><?php endif; ?>
+<?php renderMensajes(); ?>
+
+<?php if ((int) ($resumenStock['agotados'] ?? 0) > 0 || (int) ($resumenStock['bajos'] ?? 0) > 0): ?>
+    <p class="alert warning">
+        ⚠️ Hay <?= (int) $resumenStock['agotados'] ?> producto(s) agotado(s) y
+        <?= (int) $resumenStock['bajos'] ?> con stock bajo. Repón antes de vender.
+    </p>
+<?php endif; ?>
 
 <section class="card">
     <h2><?= $editando ? 'Editar producto' : 'Nuevo producto' ?></h2>
     <form method="post" class="grid-form" enctype="multipart/form-data">
-        <input type="hidden" name="csrf" value="<?= e(csrfToken()) ?>">
+        <?= csrfCampo() ?>
         <input type="hidden" name="accion" value="guardar">
         <input type="hidden" name="id" value="<?= (int) $f['id'] ?>">
-        <label>SKU <input type="text" name="sku" value="<?= e($f['sku']) ?>" required></label>
-        <label>Nombre <input type="text" name="nombre" value="<?= e($f['nombre']) ?>" required></label>
+        <label>SKU <input type="text" name="sku" maxlength="50" value="<?= e($f['sku']) ?>" required></label>
+        <label>Nombre <input type="text" name="nombre" maxlength="150" value="<?= e($f['nombre']) ?>" required></label>
         <label>Categoría
             <select name="categoria_id" required>
                 <option value="">Selecciona...</option>
@@ -139,11 +211,12 @@ render('Productos', '');
                 <option value="servicio" <?= $f['tipo'] === 'servicio' ? 'selected' : '' ?>>Servicio</option>
             </select>
         </label>
-        <label>Precio normal <input type="number" name="precio" step="0.01" min="0" value="<?= e($f['precio']) ?>" required></label>
-        <label>Precio oferta <input type="number" name="precio_oferta" step="0.01" min="0" value="<?= e($f['precio_oferta']) ?>"></label>
-        <label>Stock <input type="number" name="stock" min="0" value="<?= (int) $f['stock'] ?>"></label>
-        <label class="ancho">Descripción <input type="text" name="descripcion" value="<?= e($f['descripcion']) ?>"></label>
-        <label class="ancho">Imagen del producto (se comprime automáticamente)
+        <label>Precio normal <input type="number" name="precio" step="0.01" min="0" max="100000000" value="<?= e($f['precio']) ?>" required></label>
+        <label>Precio oferta <input type="number" name="precio_oferta" step="0.01" min="0" max="100000000" value="<?= e($f['precio_oferta']) ?>"></label>
+        <label>Stock actual <input type="number" name="stock" min="0" max="1000000" value="<?= (int) $f['stock'] ?>"></label>
+        <label>Stock mínimo (alerta) <input type="number" name="stock_minimo" min="0" max="1000000" value="<?= (int) ($f['stock_minimo'] ?? 5) ?>"></label>
+        <label class="ancho">Descripción <input type="text" name="descripcion" maxlength="500" value="<?= e($f['descripcion']) ?>"></label>
+        <label class="ancho">Imagen del producto (se comprime automáticamente, máx. 5 MB)
             <input type="file" name="imagen" accept="image/jpeg,image/png,image/gif,image/webp">
             <?php if (!empty($f['imagen'])): ?>
                 <img src="<?= e(rutaImagen($f['imagen'])) ?>" alt="Imagen actual" style="max-height:70px;border-radius:6px;margin-top:6px">
@@ -170,21 +243,22 @@ render('Productos', '');
 
 <table class="tabla">
     <thead>
-        <tr><th>Imagen</th><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Oferta</th><th>Stock</th><th></th></tr>
+        <tr><th>Imagen</th><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Oferta</th><th>Stock</th><th>Estado</th><th></th></tr>
     </thead>
     <tbody>
     <?php foreach ($productos as $p): ?>
+        <?php $minimo = (int) ($p['stock_minimo'] ?? 5); ?>
         <tr>
             <td><?php if (!empty($p['imagen'])): ?><img src="<?= e(rutaImagen($p['imagen'])) ?>" alt="" class="thumb"><?php else: ?><span class="thumb thumb-vacio">—</span><?php endif; ?></td>
             <td><?= e($p['sku']) ?></td>
-            <td><?= e($p['nombre']) ?><?= $p['tipo'] === 'servicio' ? ' <small>(servicio)</small>' : '' ?></td>
+            <td><?= e($p['nombre']) ?></td>
             <td><?= e($p['categoria']) ?></td>
             <td><?= moneda((float) $p['precio']) ?></td>
             <td><?= $p['precio_oferta'] !== null ? moneda((float) $p['precio_oferta']) : '—' ?></td>
             <td>
                 <?php if ($p['tipo'] === 'producto'): ?>
                 <form method="post" class="inline">
-                    <input type="hidden" name="csrf" value="<?= e(csrfToken()) ?>">
+                    <?= csrfCampo() ?>
                     <input type="hidden" name="accion" value="stock">
                     <input type="hidden" name="id" value="<?= (int) $p['id'] ?>">
                     <button name="ajuste" value="-1" class="btn mini danger" title="Quitar 1">−</button>
@@ -193,10 +267,11 @@ render('Productos', '');
                 </form>
                 <?php else: ?>—<?php endif; ?>
             </td>
+            <td><?= badgeStock((int) $p['stock'], $minimo, $p['tipo']) ?><small>mín. <?= $minimo ?></small></td>
             <td class="acciones-fila">
                 <a href="productos.php?editar=<?= (int) $p['id'] ?>">Editar</a>
-                <form method="post" class="inline" onsubmit="return confirm('¿Desactivar este producto?')">
-                    <input type="hidden" name="csrf" value="<?= e(csrfToken()) ?>">
+                <form method="post" class="inline" onsubmit="return confirm('¿Desactivar este producto? No se podrá vender.')">
+                    <?= csrfCampo() ?>
                     <input type="hidden" name="accion" value="desactivar">
                     <input type="hidden" name="id" value="<?= (int) $p['id'] ?>">
                     <button type="submit" class="link-danger">Desactivar</button>
@@ -204,6 +279,9 @@ render('Productos', '');
             </td>
         </tr>
     <?php endforeach; ?>
+    <?php if ($productos === []): ?>
+        <tr><td colspan="9" class="vacio">No hay productos en esta categoría.</td></tr>
+    <?php endif; ?>
     </tbody>
 </table>
 <?php renderFin(); ?>

@@ -1,11 +1,13 @@
 <?php
 require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/includes/excel.php';
 requerirAdmin();
 
-$desde = $_GET['desde'] ?? date('Y-m-d');
-$hasta = $_GET['hasta'] ?? date('Y-m-d');
-if (!strtotime($desde)) $desde = date('Y-m-d');
-if (!strtotime($hasta)) $hasta = date('Y-m-d');
+$desde = fechaValida($_GET['desde'] ?? date('Y-m-d'));
+$hasta = fechaValida($_GET['hasta'] ?? date('Y-m-d'));
+if ($desde > $hasta) {
+    [$desde, $hasta] = [$hasta, $desde];
+}
 
 $pdo = db();
 $stmt = $pdo->prepare(
@@ -16,34 +18,30 @@ $stmt = $pdo->prepare(
 );
 $stmt->execute([$desde, $hasta]);
 $ventas = $stmt->fetchAll();
-$totalPeriodo = array_sum(array_column($ventas, 'total'));
+$totalPeriodo = (float) array_sum(array_column($ventas, 'total'));
 
 $formato = $_GET['formato'] ?? 'pdf';
 
 if ($formato === 'excel') {
-    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
-    header('Content-Disposition: attachment; filename="ventas_' . $desde . '_a_' . $hasta . '.xls"');
-    echo "\xEF\xBB\xBF";
-    echo '<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-        body{font-family:Segoe UI,Arial,sans-serif;font-size:11pt;}
-        h1{color:#0f1f4d;border-bottom:2px solid #1d4ed8;padding-bottom:6px;}
-        table{border-collapse:collapse;width:100%;}
-        th{background:#1d4ed8;color:#fff;padding:8px;text-align:left;}
-        td{border:1px solid #d6dde8;padding:6px;}
-        tr:nth-child(even){background:#f1f5f9;}
-        .total{font-weight:bold;background:#eff6ff;}
-    </style></head><body>';
-    echo '<h1>Sirpro — Reporte de ventas</h1><p>Periodo: ' . htmlspecialchars($desde, ENT_QUOTES, 'UTF-8') . ' a ' . htmlspecialchars($hasta, ENT_QUOTES, 'UTF-8') . '</p>';
-    echo '<table><thead><tr><th>Folio</th><th>Fecha</th><th>Cajero</th><th>Método</th><th>Total</th></tr></thead><tbody>';
+    $filas = [];
     foreach ($ventas as $v) {
-        echo '<tr><td>' . htmlspecialchars($v['folio'], ENT_QUOTES, 'UTF-8') . '</td>';
-        echo '<td>' . date('d/m/Y H:i', strtotime($v['created_at'])) . '</td>';
-        echo '<td>' . htmlspecialchars($v['cajero'], ENT_QUOTES, 'UTF-8') . '</td>';
-        echo '<td>' . htmlspecialchars($v['metodo_pago'], ENT_QUOTES, 'UTF-8') . '</td>';
-        echo '<td>$' . number_format((float) $v['total'], 2) . '</td></tr>';
+        $filas[] = [
+            excelCelda($v['folio']),
+            excelCelda(date('d/m/Y H:i', strtotime($v['created_at']))),
+            excelCelda($v['cajero']),
+            excelCelda($v['metodo_pago']),
+            excelCelda($v['total'], 'moneda'),
+        ];
     }
-    echo '</tbody><tfoot><tr class="total"><td colspan="4">TOTAL DEL PERIODO</td><td>$' . number_format((float) $totalPeriodo, 2) . '</td></tr></tfoot></table></body></html>';
-    exit;
+    exportarExcel(
+        'ventas_' . $desde . '_a_' . $hasta,
+        'Reporte de ventas',
+        ['Periodo' => $desde . ' a ' . $hasta, 'Generado' => date('d/m/Y H:i'), 'Ventas' => count($ventas)],
+        ['Folio', 'Fecha', 'Cajero', 'Método', 'Total'],
+        $filas,
+        [130, 150, 170, 120, 120],
+        [['Ventas', (string) count($ventas)], ['Total del periodo', moneda($totalPeriodo)]]
+    );
 }
 
 render('Reporte de ventas', '');
@@ -77,7 +75,7 @@ render('Reporte de ventas', '');
             <?php endforeach; ?>
             </tbody>
         </table>
-        <div class="hoja-resumen"><div>Total del periodo: <?= moneda((float) $totalPeriodo) ?></div></div>
+        <div class="hoja-resumen"><div>Total del periodo: <?= moneda($totalPeriodo) ?></div></div>
         <div class="hoja-pie">
             <span>Documento generado por Sirpro · Punto de venta</span>
             <span>Página 1</span>

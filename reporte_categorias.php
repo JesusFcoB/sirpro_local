@@ -1,10 +1,12 @@
 <?php
 require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/includes/excel.php';
 requerirAdmin();
 
 $pdo = db();
 $categorias = $pdo->query(
-    'SELECT c.nombre, COUNT(p.id) AS total_productos
+    'SELECT c.nombre, COUNT(p.id) AS total_productos,
+            COALESCE(SUM(p.stock * COALESCE(p.precio_oferta, p.precio)), 0) AS valor
      FROM categorias c
      LEFT JOIN productos p ON p.categoria_id = c.id AND p.activo = 1
      GROUP BY c.id, c.nombre
@@ -14,24 +16,23 @@ $categorias = $pdo->query(
 $formato = $_GET['formato'] ?? 'pdf';
 
 if ($formato === 'excel') {
-    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
-    header('Content-Disposition: attachment; filename="categorias_' . date('Y-m-d') . '.xls"');
-    echo "\xEF\xBB\xBF";
-    echo '<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-        body{font-family:Segoe UI,Arial,sans-serif;font-size:11pt;}
-        h1{color:#0f1f4d;border-bottom:2px solid #1d4ed8;padding-bottom:6px;}
-        table{border-collapse:collapse;width:100%;}
-        th{background:#1d4ed8;color:#fff;padding:8px;text-align:left;}
-        td{border:1px solid #d6dde8;padding:6px;}
-        tr:nth-child(even){background:#f1f5f9;}
-    </style></head><body>';
-    echo '<h1>Sirpro — Reporte de categorías</h1><p>Generado: ' . date('d/m/Y H:i') . '</p>';
-    echo '<table><thead><tr><th>Categoría</th><th>Productos activos</th></tr></thead><tbody>';
+    $filas = [];
     foreach ($categorias as $c) {
-        echo '<tr><td>' . htmlspecialchars($c['nombre'], ENT_QUOTES, 'UTF-8') . '</td><td>' . (int) $c['total_productos'] . '</td></tr>';
+        $filas[] = [
+            excelCelda($c['nombre']),
+            excelCelda($c['total_productos'], 'numero'),
+            excelCelda($c['valor'], 'moneda'),
+        ];
     }
-    echo '</tbody></table></body></html>';
-    exit;
+    exportarExcel(
+        'categorias',
+        'Reporte de categorías',
+        ['Generado' => date('d/m/Y H:i'), 'Categorías' => count($categorias)],
+        ['Categoría', 'Productos activos', 'Valor de inventario'],
+        $filas,
+        [260, 150, 180],
+        [['Categorías', (string) count($categorias)]]
+    );
 }
 
 render('Reporte de categorías', '');
@@ -51,12 +52,13 @@ render('Reporte de categorías', '');
             <span><strong>Categorías:</strong> <?= count($categorias) ?></span>
         </div>
         <table>
-            <thead><tr><th>Categoría</th><th>Productos activos</th></tr></thead>
+            <thead><tr><th>Categoría</th><th>Productos activos</th><th>Valor de inventario</th></tr></thead>
             <tbody>
             <?php foreach ($categorias as $c): ?>
                 <tr>
                     <td><?= e($c['nombre']) ?></td>
                     <td><?= (int) $c['total_productos'] ?></td>
+                    <td><?= moneda((float) $c['valor']) ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

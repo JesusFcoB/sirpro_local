@@ -2,10 +2,11 @@
 require __DIR__ . '/includes/bootstrap.php';
 requerirLogin();
 
-$desde = $_GET['desde'] ?? date('Y-m-d');
-$hasta = $_GET['hasta'] ?? date('Y-m-d');
-if (!strtotime($desde)) $desde = date('Y-m-d');
-if (!strtotime($hasta)) $hasta = date('Y-m-d');
+$desde = fechaValida($_GET['desde'] ?? date('Y-m-d'));
+$hasta = fechaValida($_GET['hasta'] ?? date('Y-m-d'));
+if ($desde > $hasta) {
+    [$desde, $hasta] = [$hasta, $desde];
+}
 
 $stmt = db()->prepare(
     'SELECT v.id, v.folio, v.total, v.metodo_pago, v.created_at, u.nombre AS cajero

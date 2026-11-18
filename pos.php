@@ -5,14 +5,26 @@ requerirLogin();
 
 $categorias = db()->query('SELECT id, nombre FROM categorias ORDER BY nombre')->fetchAll();
 $productos = db()->query(
-    'SELECT p.id, p.sku, p.nombre, p.tipo, p.categoria_id, p.precio, p.precio_oferta, p.stock, p.imagen
+    'SELECT p.id, p.sku, p.nombre, p.tipo, p.categoria_id, p.precio, p.precio_oferta,
+            p.stock, p.stock_minimo, p.imagen
      FROM productos p WHERE p.activo = 1 ORDER BY p.nombre'
 )->fetchAll();
+
+$stockBajos = array_values(array_filter(
+    $productos,
+    static fn (array $p): bool => $p['tipo'] === 'producto'
+        && (int) $p['stock'] <= (int) ($p['stock_minimo'] ?? 5)
+));
 
 render('Punto de venta', '');
 ?>
 <div class="pos">
     <section class="catalogo">
+        <?php if ($stockBajos !== []): ?>
+            <p class="alert warning compacto">
+                ⚠️ <?= count($stockBajos) ?> producto(s) con stock bajo o agotado. Verifica existencias antes de cobrar.
+            </p>
+        <?php endif; ?>
         <div class="toolbar">
             <input type="search" id="buscar" placeholder="Buscar por nombre o SKU..." autofocus>
             <select id="filtro-categoria">
@@ -25,10 +37,13 @@ render('Punto de venta', '');
         <div class="grid" id="grid-productos">
             <?php foreach ($productos as $p):
                 $precio = $p['precio_oferta'] !== null ? (float) $p['precio_oferta'] : (float) $p['precio'];
-                $agotado = $p['tipo'] === 'producto' && (int) $p['stock'] <= 0;
+                $minimo = (int) ($p['stock_minimo'] ?? 5);
+                $estado = estadoStock((int) $p['stock'], $minimo, $p['tipo']);
+                $agotado = $estado === 'agotado';
+                $bajo = $estado === 'bajo';
             ?>
                 <button type="button"
-                        class="tarjeta<?= $agotado ? ' agotado' : '' ?>"
+                        class="tarjeta<?= $agotado ? ' agotado' : '' ?><?= $bajo ? ' bajo' : '' ?>"
                         data-id="<?= (int) $p['id'] ?>"
                         data-categoria="<?= (int) $p['categoria_id'] ?>"
                         data-texto="<?= e(mb_strtolower($p['nombre'] . ' ' . $p['sku'])) ?>"
@@ -36,6 +51,7 @@ render('Punto de venta', '');
                         data-nombre="<?= e($p['nombre']) ?>"
                         data-tipo="<?= e($p['tipo']) ?>"
                         data-stock="<?= (int) $p['stock'] ?>"
+                        data-minimo="<?= $minimo ?>"
                         <?= $agotado ? 'disabled' : '' ?>>
                     <?php if (!empty($p['imagen'])): ?>
                         <img src="<?= e(rutaImagen($p['imagen'])) ?>" alt="" class="tarjeta-img">
@@ -48,7 +64,7 @@ render('Punto de venta', '');
                         <?php endif; ?>
                         <?= moneda($precio) ?>
                     </span>
-                    <span class="stock"><?= $p['tipo'] === 'servicio' ? 'Servicio' : ($agotado ? 'Agotado' : 'Stock: ' . (int) $p['stock']) ?></span>
+                    <span class="stock"><?= $p['tipo'] === 'servicio' ? 'Servicio' : ($agotado ? 'Agotado' : 'Stock: ' . (int) $p['stock'] . ($bajo ? ' · bajo' : '')) ?></span>
                 </button>
             <?php endforeach; ?>
         </div>
@@ -127,6 +143,7 @@ function calcularCambio() {
 function agregar(btn) {
     const id = btn.dataset.id;
     const stock = Number(btn.dataset.stock);
+    const minimo = Number(btn.dataset.minimo || 5);
     const tipo = btn.dataset.tipo;
     const actual = carrito.get(id)?.cantidad ?? 0;
 
@@ -137,15 +154,27 @@ function agregar(btn) {
     if (carrito.has(id)) {
         carrito.get(id).cantidad++;
     } else {
-        carrito.set(id, { nombre: btn.dataset.nombre, precio: Number(btn.dataset.precio), cantidad: 1, stock, tipo });
+        carrito.set(id, { nombre: btn.dataset.nombre, precio: Number(btn.dataset.precio), cantidad: 1, stock, minimo, tipo });
     }
-    ocultarError();
+    if (tipo === 'producto' && stock - (actual + 1) <= minimo) {
+        mostrarAviso('Stock bajo de ' + btn.dataset.nombre + ': quedarían ' + (stock - actual - 1) + ' unidades.');
+    } else {
+        ocultarError();
+    }
     renderCarrito();
 }
 
 function mostrarError(texto) {
     const m = $('#mensaje');
     m.textContent = texto;
+    m.className = 'alert error';
+    m.hidden = false;
+}
+
+function mostrarAviso(texto) {
+    const m = $('#mensaje');
+    m.textContent = texto;
+    m.className = 'alert warning';
     m.hidden = false;
 }
 
@@ -179,6 +208,8 @@ $('#items').addEventListener('change', (ev) => {
     if (item.tipo === 'producto' && cant > item.stock) {
         cant = item.stock;
         mostrarError('Stock máximo disponible: ' + item.stock);
+    } else if (item.tipo === 'producto' && item.stock - cant <= (item.minimo ?? 5)) {
+        mostrarAviso('Quedarían ' + (item.stock - cant) + ' unidades de ' + item.nombre + ' después de esta venta.');
     } else {
         ocultarError();
     }
@@ -211,6 +242,9 @@ $('#cobrar').addEventListener('click', async () => {
     const recibido = parseFloat($('#recibido').value) || 0;
     if ($('#metodo').value === 'efectivo' && recibido < total) {
         mostrarError('El monto recibido es menor al total.');
+        return;
+    }
+    if (!confirm('Confirmar cobro de ' + fmt(total) + ' con ' + $('#metodo').value + '?')) {
         return;
     }
 

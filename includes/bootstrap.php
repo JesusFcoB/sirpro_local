@@ -65,13 +65,127 @@ function csrfValido(?string $token): bool
     return is_string($token) && isset($_SESSION['csrf']) && hash_equals($_SESSION['csrf'], $token);
 }
 
+/** Campo oculto de CSRF listo para pegar en cualquier formulario. */
+function csrfCampo(): string
+{
+    return '<input type="hidden" name="csrf" value="' . e(csrfToken()) . '">';
+}
+
+/** Evita que un POST repetido con F5 vuelva a ejecutar la operacion. */
+function irA(string $ruta): never
+{
+    header('Location: ' . $ruta);
+    exit;
+}
+
+function flash(string $mensaje, string $tipo = 'ok'): void
+{
+    $_SESSION['flash'] = ['mensaje' => $mensaje, 'tipo' => $tipo === 'error' ? 'error' : 'ok'];
+}
+
+function tomarFlash(): ?array
+{
+    $flash = $_SESSION['flash'] ?? null;
+    unset($_SESSION['flash']);
+    return is_array($flash) ? $flash : null;
+}
+
+function renderMensajes(): void
+{
+    $flash = tomarFlash();
+    if ($flash !== null) {
+        echo '<p class="alert ' . $flash['tipo'] . '">' . e($flash['mensaje']) . '</p>';
+    }
+}
+
+/** Entero positivo estricto; 0 cuando el dato no es valido. */
+function idValido(mixed $valor): int
+{
+    if (is_int($valor)) {
+        return $valor > 0 ? $valor : 0;
+    }
+    if (!is_string($valor) || trim($valor) === '') {
+        return 0;
+    }
+    $numero = filter_var(trim($valor), FILTER_VALIDATE_INT);
+    return ($numero !== false && $numero > 0) ? (int) $numero : 0;
+}
+
+/** Texto recortado y sin espacios sobrantes (evita campos desbordados). */
+function textoValido(mixed $valor, int $max = 150): string
+{
+    $texto = is_string($valor) ? trim($valor) : '';
+    return mb_substr($texto, 0, $max);
+}
+
+/** Numero decimal valido dentro de un rango; null si no lo es. */
+function numeroValido(mixed $valor, float $min = 0, float $max = 1000000000): ?float
+{
+    if (!is_string($valor) && !is_int($valor) && !is_float($valor)) {
+        return null;
+    }
+    $texto = trim((string) $valor);
+    if ($texto === '' || !is_numeric($texto)) {
+        return null;
+    }
+    $numero = (float) $texto;
+    if (!is_finite($numero) || $numero < $min || $numero > $max) {
+        return null;
+    }
+    return $numero;
+}
+
+/** Acepta unicamente fechas YYYY-MM-DD reales; si no, devuelve hoy. */
+function fechaValida(mixed $valor): string
+{
+    $texto = is_string($valor) ? trim($valor) : '';
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $texto)) {
+        $anio = (int) substr($texto, 0, 4);
+        $mes = (int) substr($texto, 5, 2);
+        $dia = (int) substr($texto, 8, 2);
+        if (checkdate($mes, $dia, $anio)) {
+            return $texto;
+        }
+    }
+    return date('Y-m-d');
+}
+
+/** Estado de stock usado por tablero, inventario, punto de venta y reportes. */
+function estadoStock(int $stock, int $minimo, string $tipo): string
+{
+    if ($tipo === 'servicio') {
+        return 'servicio';
+    }
+    if ($stock <= 0) {
+        return 'agotado';
+    }
+    return $stock <= max(0, $minimo) ? 'bajo' : 'ok';
+}
+
+function etiquetaStock(string $estado): string
+{
+    return match ($estado) {
+        'agotado' => 'Agotado',
+        'bajo' => 'Stock bajo',
+        'servicio' => 'Servicio',
+        default => 'Normal',
+    };
+}
+
+function badgeStock(int $stock, int $minimo, string $tipo): string
+{
+    $estado = estadoStock($stock, $minimo, $tipo);
+    $etiqueta = $estado === 'bajo' ? 'Bajo (' . $stock . ')' : etiquetaStock($estado);
+    return '<span class="badge ' . $estado . '">' . e($etiqueta) . '</span>';
+}
+
 function render(string $titulo, string $contenido): void
 {
     $nombre = e($_SESSION['nombre'] ?? '');
     $rol = $_SESSION['rol'] ?? '';
     $links = $rol === 'admin'
-        ? '<a href="pos.php">Punto de venta</a><a href="productos.php">Productos</a><a href="categorias.php">Categorías</a><a href="ventas.php">Ventas</a><a href="reportes.php">Reportes</a>'
-        : '<a href="pos.php">Punto de venta</a><a href="ventas.php">Ventas</a>';
+        ? '<a href="dashboard.php">Tablero</a><a href="pos.php">Punto de venta</a><a href="productos.php">Productos</a><a href="categorias.php">Categorías</a><a href="ventas.php">Ventas</a><a href="reportes.php">Reportes</a>'
+        : '<a href="dashboard.php">Tablero</a><a href="pos.php">Punto de venta</a><a href="ventas.php">Ventas</a>';
     echo <<<HTML
 <!DOCTYPE html>
 <html lang="es">

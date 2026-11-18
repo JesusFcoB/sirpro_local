@@ -1,45 +1,64 @@
 <?php
 require __DIR__ . '/includes/bootstrap.php';
-require __DIR__ . '/includes/imagenes.php';
+require __DIR__ . '/includes/excel.php';
 requerirAdmin();
 
 $pdo = db();
 $productos = $pdo->query(
     'SELECT p.sku, p.nombre, c.nombre AS categoria, p.tipo, p.descripcion,
-            p.precio, p.precio_oferta, p.stock
+            p.precio, p.precio_oferta, p.stock, p.stock_minimo
      FROM productos p
      JOIN categorias c ON c.id = p.categoria_id
      WHERE p.activo = 1
      ORDER BY c.nombre, p.nombre'
 )->fetchAll();
 
+$bajos = 0;
+$agotados = 0;
+foreach ($productos as $p) {
+    if ($p['tipo'] !== 'producto') {
+        continue;
+    }
+    $estado = estadoStock((int) $p['stock'], (int) ($p['stock_minimo'] ?? 5), 'producto');
+    if ($estado === 'bajo') {
+        $bajos++;
+    } elseif ($estado === 'agotado') {
+        $agotados++;
+    }
+}
+
 $formato = $_GET['formato'] ?? 'pdf';
 
 if ($formato === 'excel') {
-    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
-    header('Content-Disposition: attachment; filename="productos_' . date('Y-m-d') . '.xls"');
-    echo "\xEF\xBB\xBF";
-    echo '<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-        body{font-family:Segoe UI,Arial,sans-serif;font-size:11pt;}
-        h1{color:#0f1f4d;border-bottom:2px solid #1d4ed8;padding-bottom:6px;}
-        table{border-collapse:collapse;width:100%;}
-        th{background:#1d4ed8;color:#fff;padding:8px;text-align:left;}
-        td{border:1px solid #d6dde8;padding:6px;}
-        tr:nth-child(even){background:#f1f5f9;}
-    </style></head><body>';
-    echo '<h1>Sirpro — Reporte de productos</h1><p>Generado: ' . date('d/m/Y H:i') . '</p>';
-    echo '<table><thead><tr><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Tipo</th><th>Precio</th><th>Oferta</th><th>Stock</th></tr></thead><tbody>';
+    $filas = [];
     foreach ($productos as $p) {
-        echo '<tr><td>' . htmlspecialchars($p['sku'], ENT_QUOTES, 'UTF-8') . '</td>';
-        echo '<td>' . htmlspecialchars($p['nombre'], ENT_QUOTES, 'UTF-8') . '</td>';
-        echo '<td>' . htmlspecialchars($p['categoria'], ENT_QUOTES, 'UTF-8') . '</td>';
-        echo '<td>' . ($p['tipo'] === 'servicio' ? 'Servicio' : 'Producto') . '</td>';
-        echo '<td>$' . number_format((float) $p['precio'], 2) . '</td>';
-        echo '<td>' . ($p['precio_oferta'] !== null ? '$' . number_format((float) $p['precio_oferta'], 2) : '—') . '</td>';
-        echo '<td>' . (int) $p['stock'] . '</td></tr>';
+        $minimo = (int) ($p['stock_minimo'] ?? 5);
+        $estado = estadoStock((int) $p['stock'], $minimo, $p['tipo']);
+        $filas[] = [
+            excelCelda($p['sku']),
+            excelCelda($p['nombre']),
+            excelCelda($p['categoria']),
+            excelCelda($p['tipo'] === 'servicio' ? 'Servicio' : 'Producto'),
+            excelCelda($p['precio'], 'moneda'),
+            excelCelda($p['precio_oferta'] ?? '', $p['precio_oferta'] !== null ? 'moneda' : 'texto'),
+            excelCelda($p['stock'], 'numero'),
+            excelCelda($minimo, 'numero'),
+            excelCelda(etiquetaStock($estado)),
+        ];
     }
-    echo '</tbody></table></body></html>';
-    exit;
+    exportarExcel(
+        'productos',
+        'Reporte de productos',
+        ['Generado' => date('d/m/Y H:i'), 'Productos activos' => count($productos)],
+        ['SKU', 'Nombre', 'Categoría', 'Tipo', 'Precio', 'Oferta', 'Stock', 'Mínimo', 'Estado'],
+        $filas,
+        [95, 250, 160, 90, 100, 100, 75, 75, 100],
+        [
+            ['Productos activos', (string) count($productos)],
+            ['Stock bajo', (string) $bajos],
+            ['Agotados', (string) $agotados],
+        ]
+    );
 }
 
 render('Reporte de productos', '');
@@ -56,12 +75,18 @@ render('Reporte de productos', '');
         </div>
         <div class="hoja-meta">
             <span><strong>Generado:</strong> <?= e(date('d/m/Y H:i')) ?></span>
-            <span><strong>Total de productos:</strong> <?= count($productos) ?></span>
+            <span><strong>Productos:</strong> <?= count($productos) ?></span>
+            <span><strong>Stock bajo:</strong> <?= $bajos ?></span>
+            <span><strong>Agotados:</strong> <?= $agotados ?></span>
         </div>
         <table>
-            <thead><tr><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Tipo</th><th>Precio</th><th>Oferta</th><th>Stock</th></tr></thead>
+            <thead><tr><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Tipo</th><th>Precio</th><th>Oferta</th><th>Stock</th><th>Mín.</th><th>Estado</th></tr></thead>
             <tbody>
             <?php foreach ($productos as $p): ?>
+                <?php
+                    $minimo = (int) ($p['stock_minimo'] ?? 5);
+                    $estado = estadoStock((int) $p['stock'], $minimo, $p['tipo']);
+                ?>
                 <tr>
                     <td><?= e($p['sku']) ?></td>
                     <td><?= e($p['nombre']) ?></td>
@@ -70,6 +95,8 @@ render('Reporte de productos', '');
                     <td><?= moneda((float) $p['precio']) ?></td>
                     <td><?= $p['precio_oferta'] !== null ? moneda((float) $p['precio_oferta']) : '—' ?></td>
                     <td><?= (int) $p['stock'] ?></td>
+                    <td><?= $minimo ?></td>
+                    <td><span class="badge <?= $estado ?>"><?= e(etiquetaStock($estado)) ?></span></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
