@@ -19,6 +19,7 @@ Sistema de punto de venta local para Sirpro. Incluye:
 - **Asistente IA** con Gemini: chat disponible para todos los usuarios con tres modos (analizar negocio, ayuda del sistema y redactar textos). Incluye respuestas en streaming con botón **Detener**, copiar/regenerar, caché de respuestas frecuentes y límite de uso por usuario. Se configura una sola vez en el servidor; no requiere instalar nada en las PC.
 - **Reloj en la barra superior**: muestra la fecha y la hora locales en español de Latam y se actualiza cada segundo.
 - **Barra de opciones**: los accesos del sistema van en una franja propia, con desplazamiento horizontal en pantallas chicas para que no se amontonen.
+- **Diseño adaptable**: en celulares se compactan la cabecera y los formularios, las tarjetas se acomodan en una columna y las tablas se desplazan dentro de su propio recuadro, sin sacar la página del ancho de la pantalla.
 - **Sugerencia de reposición** en el tablero: prioriza productos con stock bajo usando también las ventas de los últimos 30 días, con un botón para pedirle más detalles a la IA.
 - **Generar descripción con IA** en el formulario de Productos: redacta una descripción a partir del nombre, categoría y precio.
 

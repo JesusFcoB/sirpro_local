@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function(){
             <span class="reloj-fecha">—</span>
             <span class="reloj-hora">--:--:--</span>
         </div>
-        <button class="btn ghost mini" id="dark-btn" type="button" onclick="toggleDark()" title="Cambiar modo oscuro">🌙</button> {$nombre} <a class="btn ghost mini" href="logout.php">Salir</a>
+        <button class="btn ghost mini" id="dark-btn" type="button" onclick="toggleDark()" title="Cambiar modo oscuro">🌙</button> <span class="usuario-nombre">{$nombre}</span> <a class="btn ghost mini" href="logout.php">Salir</a>
     </div>
 </header>
 <div class="opciones-bar">

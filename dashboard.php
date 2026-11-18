@@ -110,6 +110,7 @@ renderMensajes();
         <?php if ($ultimas === []): ?>
             <p class="vacio">Todavía no hay ventas registradas.</p>
         <?php else: ?>
+            <div class="tabla-wrap">
             <table>
                 <thead><tr><th>Folio</th><th>Hora</th><th>Cajero</th><th>Total</th></tr></thead>
                 <tbody>
@@ -123,6 +124,7 @@ renderMensajes();
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         <?php endif; ?>
     </section>
 </div>

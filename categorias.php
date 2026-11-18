@@ -88,18 +88,19 @@ render('Categorías', '');
 
 <section class="card">
     <h2><?= $editando ? 'Editar categoría' : 'Nueva categoría' ?></h2>
-    <form method="post" class="grid-form" style="grid-template-columns: 1fr auto auto;">
+    <form method="post" class="grid-form categoria-form">
         <?= csrfCampo() ?>
         <input type="hidden" name="accion" value="guardar">
         <input type="hidden" name="id" value="<?= (int) $f['id'] ?>">
         <label>Nombre <input type="text" name="nombre" maxlength="100" value="<?= e($f['nombre']) ?>" required></label>
-        <div class="acciones" style="align-self: end;">
+        <div class="acciones">
             <?php if ($editando): ?><a class="btn secondary" href="categorias.php">Cancelar</a><?php endif; ?>
             <button type="submit" class="btn success">Guardar</button>
         </div>
     </form>
 </section>
 
+<div class="tabla-wrap">
 <table class="tabla">
     <thead>
         <tr><th>Nombre</th><th>Productos</th><th></th></tr>
@@ -125,4 +126,5 @@ render('Categorías', '');
     <?php endif; ?>
     </tbody>
 </table>
+</div>
 <?php renderFin(); ?>

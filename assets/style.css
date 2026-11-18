@@ -252,6 +252,8 @@ body.dark .alert.warning { background: #78350f; color: #fde68a; }
 .grid-form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 14px; }
 .grid-form .ancho { grid-column: span 2; }
 .grid-form .acciones { grid-column: 1 / -1; }
+.categoria-form { grid-template-columns: 1fr auto auto; }
+.categoria-form .acciones { grid-column: auto; align-self: end; }
 
 /* ---------- Alertas de stock ---------- */
 .badge {
@@ -348,6 +350,8 @@ th, td { padding: 9px 10px; border-bottom: 1px solid var(--borde); text-align: l
 th { background: var(--tabla-head); color: var(--text-sec); font-weight: 700; text-transform: uppercase; font-size: .75rem; letter-spacing: .4px; }
 tbody tr:hover { background: rgba(37,99,235,.045); }
 .tabla { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--borde); box-shadow: var(--sombra); }
+.tabla-scroll { overflow-x: auto; border: 1px solid var(--borde); border-radius: 12px; }
+.tabla-scroll table { min-width: 420px; }
 td small { display: block; color: var(--text-sec); }
 .carrito td input[type=number] { width: 64px; }
 .quitar { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 1rem; }
@@ -428,6 +432,8 @@ td small { display: block; color: var(--text-sec); }
     .hoja tr { page-break-inside: avoid; }
     thead { display: table-header-group; }
     .ticket { border: none; box-shadow: none; }
+    .tabla, .tabla-wrap, .tabla-scroll, .reporte-pdf { overflow: visible !important; border: 0 !important; box-shadow: none !important; }
+    .tabla, .tabla-wrap table, .tabla-scroll table, .hoja table { min-width: 0 !important; }
 }
 
 @media (max-width: 900px) {
@@ -499,4 +505,85 @@ body.dark .ia-error { color: #fca5a5; }
     .ia-layout { grid-template-columns: 1fr; }
     .ia-chat { height: 50vh; }
     .ia-desc-fila { flex-direction: column; align-items: stretch; }
+}
+
+/* ---------- Pantallas pequeñas ---------- */
+@media (max-width: 640px) {
+    body { overflow-x: hidden; }
+    main { padding: 14px; }
+    h1 { font-size: 1.45rem; margin-bottom: 14px; }
+    h2 { font-size: 1rem; }
+
+    .topbar { padding: 10px 12px; gap: 8px; flex-wrap: nowrap; }
+    .brand { font-size: .95rem; gap: 6px; min-width: 0; }
+    .brand img { height: 26px; max-width: 84px; width: auto; object-fit: contain; }
+    .topbar .user { gap: 5px; font-size: .8rem; min-width: 0; }
+    .topbar .btn.mini { padding: 4px 7px; font-size: .78rem; }
+    .usuario-nombre { display: none; }
+    .reloj { padding-right: 0; margin-right: 0; border-right: 0; }
+    .reloj-hora { font-size: .8rem; }
+
+    .opciones-bar { padding: 6px 10px; gap: 4px; scrollbar-width: none; }
+    .opciones-bar::-webkit-scrollbar { display: none; }
+    .opciones-bar a { padding: 6px 10px; font-size: .84rem; }
+
+    .login-card { width: calc(100% - 28px); max-width: 360px; padding: 24px; }
+
+    .card { padding: 14px; border-radius: 12px; min-width: 0; }
+    .dos-col > *, .pos > *, .catalogo, .carrito { min-width: 0; }
+    .lista-alertas li { flex-wrap: wrap; }
+    .lista-alertas .nombre { min-width: 0; overflow-wrap: anywhere; }
+    .toolbar { gap: 8px; }
+    .toolbar input[type=search] { min-width: 0; width: 100%; }
+    .toolbar select { width: 100%; }
+
+    .grid-form { grid-template-columns: 1fr; gap: 0; }
+    .grid-form > label, .grid-form input, .grid-form select, .grid-form textarea { min-width: 0; max-width: 100%; width: 100%; }
+    .grid-form > label { overflow-wrap: anywhere; }
+    .grid-form .ancho,
+    .categoria-form,
+    .categoria-form .acciones { grid-column: auto; align-self: stretch; }
+    .acciones { justify-content: stretch; }
+    .acciones .btn { flex: 1 1 auto; }
+
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .kpi { padding: 12px; }
+    .kpi .valor { font-size: 1.35rem; }
+
+    .pos { gap: 12px; }
+    .catalogo, .carrito { padding: 12px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); max-height: none; overflow: visible; padding-right: 0; gap: 10px; }
+    .tarjeta-img { height: 90px; }
+
+    .tabla-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tabla-wrap table { min-width: 420px; }
+    .tabla-wrap table.tabla { min-width: 560px; }
+    .tabla-scroll table { min-width: 420px; }
+    th, td { padding: 7px 8px; font-size: .84rem; }
+
+    .ticket-wrap { max-width: 100%; }
+    .ticket { padding: 14px; font-size: .82rem; }
+
+    .hoja { padding: 18px 14px; }
+    .hoja-cabecera { gap: 10px; }
+    .hoja-cabecera img { height: 40px; }
+    .hoja-cabecera h2 { font-size: 1.2rem; }
+    .hoja-meta { flex-direction: column; gap: 4px; }
+    .reporte-pdf { overflow-x: auto; }
+    .hoja table { min-width: 520px; }
+
+    .ia-cabecera { gap: 8px; }
+    .ia-chat { height: 55vh; min-height: 320px; padding: 12px; }
+    .ia-msj { max-width: 92%; }
+    .ia-form { flex-direction: column; align-items: stretch; padding: 10px 12px 4px; }
+    .ia-form textarea { width: 100%; }
+    .ia-acciones-envio { width: 100%; }
+    .ia-acciones-envio .btn { flex: 1; }
+    .ia-ayuda { margin: 2px 12px 12px; }
+}
+
+@media (max-width: 420px) {
+    .kpis { grid-template-columns: 1fr; }
+    .brand span { font-size: .95rem; }
+    .opciones-bar a { font-size: .8rem; padding: 6px 8px; }
 }

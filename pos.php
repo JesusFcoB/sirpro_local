@@ -72,12 +72,14 @@ render('Punto de venta', '');
 
     <section class="carrito">
         <h2>Venta actual</h2>
-        <table>
-            <thead>
-                <tr><th>Producto</th><th>Cant.</th><th>Importe</th><th></th></tr>
-            </thead>
-            <tbody id="items"></tbody>
-        </table>
+        <div class="tabla-scroll">
+            <table>
+                <thead>
+                    <tr><th>Producto</th><th>Cant.</th><th>Importe</th><th></th></tr>
+                </thead>
+                <tbody id="items"></tbody>
+            </table>
+        </div>
         <p class="vacio" id="vacio">Agrega productos a la venta.</p>
 
         <div class="totales">

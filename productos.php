@@ -247,6 +247,7 @@ render('Productos', '');
     </label>
 </form>
 
+<div class="tabla-wrap">
 <table class="tabla">
     <thead>
         <tr><th>Imagen</th><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Oferta</th><th>Stock</th><th>Estado</th><th></th></tr>
@@ -290,6 +291,7 @@ render('Productos', '');
     <?php endif; ?>
     </tbody>
 </table>
+</div>
 
 <script>
 (function () {

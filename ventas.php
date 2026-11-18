@@ -29,6 +29,7 @@ render('Ventas', '');
 
 <p class="resumen">Ventas: <strong><?= count($ventas) ?></strong> · Total: <strong><?= moneda((float) $totalPeriodo) ?></strong></p>
 
+<div class="tabla-wrap">
 <table class="tabla">
     <thead>
         <tr><th>Folio</th><th>Fecha</th><th>Cajero</th><th>Pago</th><th>Total</th><th></th></tr>
@@ -49,4 +50,5 @@ render('Ventas', '');
     <?php endif; ?>
     </tbody>
 </table>
+</div>
 <?php renderFin(); ?>
