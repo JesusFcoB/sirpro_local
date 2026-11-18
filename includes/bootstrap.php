@@ -81,19 +81,29 @@ function render(string $titulo, string $contenido): void
 <title>{$titulo} - Sirpro</title>
 <link rel="stylesheet" href="assets/style.css">
 <script>
-(function(){
-  if (localStorage.getItem('sirpro-dark') === '1') document.body.classList.add('dark');
-})();
-function toggleDark(){ document.body.classList.toggle('dark'); localStorage.setItem('sirpro-dark', document.body.classList.contains('dark') ? '1' : '0'); }
+function toggleDark(){
+  document.body.classList.toggle('dark');
+  localStorage.setItem('sirpro-dark', document.body.classList.contains('dark') ? '1' : '0');
+  var b=document.getElementById('dark-btn'); if(b) b.textContent=document.body.classList.contains('dark')?'☀️':'🌙';
+}
 </script>
 </head>
 <body>
+<script>
+if (localStorage.getItem('sirpro-dark') === '1') document.body.classList.add('dark');
+document.addEventListener('DOMContentLoaded', function(){
+  if (document.body.classList.contains('dark')) {
+    var b = document.getElementById('dark-btn');
+    if (b) b.textContent = '☀️';
+  }
+});
+</script>
 <header class="topbar">
     <div class="brand"><img src="assets/logo.png" alt="Sirpro" onerror="this.onerror=function(){this.style.display='none'};this.src='assets/logo.svg'"><span>Sirpro</span></div>
     <nav>
         {$links}
     </nav>
-    <div class="user"><button class="toggle-dark" type="button" onclick="toggleDark()" title="Modo oscuro">🌙</button> {$nombre} <a href="logout.php">Salir</a></div>
+    <div class="user"><button class="btn ghost mini" id="dark-btn" type="button" onclick="toggleDark()" title="Cambiar modo oscuro">🌙</button> {$nombre} <a class="btn ghost mini" href="logout.php">Salir</a></div>
 </header>
 <main>
 HTML;

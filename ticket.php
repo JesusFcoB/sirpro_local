@@ -50,8 +50,8 @@ render('Ticket ' . $venta['folio'], '');
         <p class="gracias">¡Gracias por su compra!</p>
     </div>
     <div class="acciones centrado">
-        <button type="button" class="btn" onclick="window.print()">Imprimir</button>
-        <a class="btn primary" href="pos.php">Nueva venta</a>
+        <button type="button" class="btn info no-print" onclick="window.print()">Imprimir</button>
+        <a class="btn primary no-print" href="pos.php">Nueva venta</a>
     </div>
 </div>
 <?php renderFin(); ?>

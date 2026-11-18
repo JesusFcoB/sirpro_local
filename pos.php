@@ -82,8 +82,8 @@ render('Punto de venta', '');
         <p>Cambio: <strong id="cambio">$0.00</strong></p>
 
         <div class="acciones">
-            <button type="button" class="btn" id="vaciar">Vaciar</button>
-            <button type="button" class="btn primary" id="cobrar">Cobrar</button>
+            <button type="button" class="btn secondary" id="vaciar">Vaciar</button>
+            <button type="button" class="btn success" id="cobrar">Cobrar</button>
         </div>
         <p class="alert error" id="mensaje" hidden></p>
     </section>

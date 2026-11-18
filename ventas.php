@@ -23,7 +23,7 @@ render('Ventas', '');
 <form method="get" class="toolbar">
     <label>Desde <input type="date" name="desde" value="<?= e($desde) ?>"></label>
     <label>Hasta <input type="date" name="hasta" value="<?= e($hasta) ?>"></label>
-    <button type="submit" class="btn">Filtrar</button>
+    <button type="submit" class="btn info">Filtrar</button>
 </form>
 
 <p class="resumen">Ventas: <strong><?= count($ventas) ?></strong> · Total: <strong><?= moneda((float) $totalPeriodo) ?></strong></p>

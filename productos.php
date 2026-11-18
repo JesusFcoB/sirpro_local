@@ -151,8 +151,8 @@ render('Productos', '');
             <?php endif; ?>
         </label>
         <div class="acciones">
-            <?php if ($editando): ?><a class="btn" href="productos.php">Cancelar</a><?php endif; ?>
-            <button type="submit" class="btn primary">Guardar</button>
+            <?php if ($editando): ?><a class="btn secondary" href="productos.php">Cancelar</a><?php endif; ?>
+            <button type="submit" class="btn success">Guardar</button>
         </div>
     </form>
 </section>
@@ -187,9 +187,9 @@ render('Productos', '');
                     <input type="hidden" name="csrf" value="<?= e(csrfToken()) ?>">
                     <input type="hidden" name="accion" value="stock">
                     <input type="hidden" name="id" value="<?= (int) $p['id'] ?>">
-                    <button name="ajuste" value="-1" class="btn mini">−</button>
+                    <button name="ajuste" value="-1" class="btn mini danger" title="Quitar 1">−</button>
                     <strong><?= (int) $p['stock'] ?></strong>
-                    <button name="ajuste" value="1" class="btn mini">+</button>
+                    <button name="ajuste" value="1" class="btn mini info" title="Agregar 1">+</button>
                 </form>
                 <?php else: ?>—<?php endif; ?>
             </td>

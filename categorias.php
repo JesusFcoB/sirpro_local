@@ -71,8 +71,8 @@ render('Categorías', '');
         <input type="hidden" name="id" value="<?= (int) $f['id'] ?>">
         <label>Nombre <input type="text" name="nombre" value="<?= e($f['nombre']) ?>" required></label>
         <div class="acciones" style="align-self: end;">
-            <?php if ($editando): ?><a class="btn" href="categorias.php">Cancelar</a><?php endif; ?>
-            <button type="submit" class="btn primary">Guardar</button>
+            <?php if ($editando): ?><a class="btn secondary" href="categorias.php">Cancelar</a><?php endif; ?>
+            <button type="submit" class="btn success">Guardar</button>
         </div>
     </form>
 </section>
